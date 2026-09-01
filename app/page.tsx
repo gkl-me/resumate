@@ -1,6 +1,22 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Code, Terminal, Zap, Briefcase, GraduationCap, Github } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Resumate - Local-First Developer Resume Builder",
+  description:
+    "Craft the ultimate developer resume with Resumate. A fast, local-first, drag-and-drop resume builder with live PDF preview and zero data collection.",
+  keywords: [
+    "Resumate",
+    "Developer Resume Builder",
+    "Dev Resume",
+    "Local-first Resume Builder",
+    "Free Resume Maker",
+    "Live PDF Preview",
+    "ATS Friendly Resume",
+  ],
+};
 
 export default function Home() {
   return (
@@ -21,9 +37,18 @@ export default function Home() {
           <nav className="hidden md:flex gap-8 text-sm font-medium text-zinc-400">
             <Link href="#about" className="hover:text-zinc-100 transition-colors">About</Link>
             <Link href="#features" className="hover:text-zinc-100 transition-colors">Features</Link>
-            <Link href="#templates" className="hover:text-zinc-100 transition-colors">Templates</Link>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com/gkl-me/resumate"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/80 px-3.5 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all"
+              aria-label="GitHub Repository"
+            >
+              <Github className="h-4 w-4" />
+              <span className="hidden sm:inline">GitHub</span>
+            </a>
             <Link
               href="/builder"
               className="rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 transition-all"
@@ -47,7 +72,7 @@ export default function Home() {
               Craft the <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Ultimate</span> Dev Resume.
             </h1>
             <p className="mt-6 text-lg leading-8 text-zinc-400 max-w-2xl mx-auto">
-              A lightning-fast, local-first resume builder inspired by readme.so. Drag and drop sections, edit content with ease, and see a live PDF preview instantly. No sign-ups required.
+              A lightning-fast, local-first resume builder.Drag and drop sections, edit content with ease, and see a live PDF preview instantly. No sign-ups required.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link
@@ -164,7 +189,12 @@ export default function Home() {
             <span className="text-sm font-semibold text-zinc-400">Resumate</span>
           </div>
           <div className="flex gap-6">
-            <a href="#" className="text-zinc-500 hover:text-zinc-300">
+            <a
+              href="https://github.com/gkl-me/resumate"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
               <span className="sr-only">GitHub</span>
               <Github className="h-5 w-5" />
             </a>

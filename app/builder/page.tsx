@@ -1,74 +1,142 @@
 "use client";
 
-import { EditorPane } from "@/components/EditorPane";
-import { PreviewPane } from "@/components/PreviewPane";
-import { useResumeState } from "@/hooks/useResumeState";
-import Link from "next/link";
-import { ArrowLeft, Edit3, Eye } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import BuilderHeader from "@/components/builder/BuilderHeader";
+import SectionList from "@/components/builder/SectionList";
+import ResumePreview from "@/components/builder/ResumePreview";
+import { ResumeData, type ResumeDataType, type Profile, type Experience, type Skill, type Project, type Education } from "@/app/data/data";
+
+const STORAGE_KEY = "resumate_user_resume_data";
 
 export default function BuilderPage() {
-    const hook = useResumeState();
-    const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
+  const [mobileTab, setMobileTab] = useState<"sections" | "preview">("sections");
+  const [resumeData, setResumeData] = useState<ResumeDataType>(ResumeData);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-    return (
-        <div className="flex h-screen w-full flex-col overflow-hidden bg-white dark:bg-zinc-950 font-sans selection:bg-indigo-500/30">
+  // Load saved data from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setResumeData(JSON.parse(saved));
+      }
+    } catch {
+      // Ignore JSON parse / storage errors
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
 
-            {/* Top Navbar */}
-            <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 px-4 md:px-6 backdrop-blur-md">
-                <Link href="/" className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
-                    <ArrowLeft className="h-4 w-4" /> Back home
-                </Link>
+  // Save changes to localStorage
+  const updateAndPersist = (newData: ResumeDataType) => {
+    setResumeData(newData);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+    } catch {
+      // Ignore storage errors
+    }
+  };
 
-                {/* Mobile View Toggle */}
-                <div className="flex md:hidden rounded-lg bg-zinc-200 dark:bg-zinc-800 p-1">
-                    <button
-                        onClick={() => setMobileView("editor")}
-                        className={`flex items-center gap-2 rounded px-3 py-1 text-xs font-medium transition-all ${mobileView === "editor" ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-400"}`}
-                    >
-                        <Edit3 className="h-3 w-3" /> Edit
-                    </button>
-                    <button
-                        onClick={() => setMobileView("preview")}
-                        className={`flex items-center gap-2 rounded px-3 py-1 text-xs font-medium transition-all ${mobileView === "preview" ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-400"}`}
-                    >
-                        <Eye className="h-3 w-3" /> Preview
-                    </button>
+  // Reset to default demo data
+  const handleReset = () => {
+    setResumeData(ResumeData);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
+  const handleUpdateProfile = (profile: Profile) => {
+    updateAndPersist({ ...resumeData, profile });
+  };
+
+  const handleUpdateExperience = (experience: Experience[]) => {
+    updateAndPersist({ ...resumeData, experience });
+  };
+
+  const handleUpdateSkills = (skill: Skill[]) => {
+    updateAndPersist({ ...resumeData, skill });
+  };
+
+  const handleUpdateProjects = (project: Project[]) => {
+    updateAndPersist({ ...resumeData, project });
+  };
+
+  const handleUpdateEducation = (education: Education[]) => {
+    updateAndPersist({ ...resumeData, education });
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <div className="absolute top-0 right-0 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 h-[400px] w-[400px] rounded-full bg-cyan-600/8 blur-[120px]" />
+      </div>
+
+      {/* Header */}
+      <BuilderHeader
+        onToggleMobileTab={setMobileTab}
+        activeTab={mobileTab}
+        onReset={handleReset}
+      />
+
+      {/* Main Content */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* ===== DESKTOP LAYOUT ===== */}
+        {/* Left: Section Editor */}
+        <aside className="hidden md:flex flex-col w-[380px] lg:w-[420px] flex-shrink-0 border-r border-zinc-800/60 bg-zinc-950/80 overflow-hidden">
+          <SectionList
+            data={resumeData}
+            onUpdateProfile={handleUpdateProfile}
+            onUpdateExperience={handleUpdateExperience}
+            onUpdateSkills={handleUpdateSkills}
+            onUpdateProjects={handleUpdateProjects}
+            onUpdateEducation={handleUpdateEducation}
+          />
+        </aside>
+
+        {/* Right: Resume Preview */}
+        <main className="hidden md:flex flex-1 flex-col overflow-hidden bg-zinc-900/20">
+          {/* Preview Label */}
+          <div className="flex items-center justify-between px-5 py-2.5 border-b border-zinc-800/40 bg-zinc-950/50 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs font-medium text-zinc-500">Live Preview</span>
+            </div>
+            <span className="text-xs text-zinc-600">A4 · PDF-ready</span>
+          </div>
+          <ResumePreview data={resumeData} />
+        </main>
+
+        {/* ===== MOBILE LAYOUT ===== */}
+        <div className="md:hidden flex-1 overflow-hidden">
+          {mobileTab === "sections" ? (
+            <div className="flex flex-col h-full overflow-hidden bg-zinc-950">
+              <SectionList
+                data={resumeData}
+                onUpdateProfile={handleUpdateProfile}
+                onUpdateExperience={handleUpdateExperience}
+                onUpdateSkills={handleUpdateSkills}
+                onUpdateProjects={handleUpdateProjects}
+                onUpdateEducation={handleUpdateEducation}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col h-full overflow-hidden bg-zinc-900/20">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/40 bg-zinc-950/50 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-xs font-medium text-zinc-500">Live Preview</span>
                 </div>
-
-                <div className="hidden md:block text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                    Resumate Builder
-                </div>
-            </header>
-
-            {/* Main Split Interface */}
-            <main className="flex flex-1 overflow-hidden">
-
-                {/* Editor Pane (Left on Desktop, toggled on Mobile) */}
-                <div className={`flex-1 overflow-y-auto border-r border-zinc-200 dark:border-zinc-800 custom-scrollbar ${mobileView === "preview" ? "hidden md:block" : "block"}`}>
-                    <EditorPane hook={hook} />
-                </div>
-
-                {/* Preview Pane (Right on Desktop, toggled on Mobile) */}
-                <div className={`flex-1 bg-zinc-100 dark:bg-zinc-950/50 flex flex-col ${mobileView === "editor" ? "hidden md:flex" : "flex"}`}>
-                    {hook.data && <PreviewPane data={hook.data} />}
-                </div>
-
-            </main>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #3f3f46;
-          border-radius: 20px;
-        }
-      `}} />
+                <span className="text-xs text-zinc-600">A4 · PDF-ready</span>
+              </div>
+              <ResumePreview data={resumeData} />
+            </div>
+          )}
         </div>
-    );
+      </div>
+    </div>
+  );
 }
