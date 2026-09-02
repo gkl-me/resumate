@@ -14,25 +14,19 @@ const s = StyleSheet.create({
     lineHeight: 1.25,
   },
   header: {
-    alignItems: "center",
     textAlign: "center",
-    marginBottom: 6,
-  },
-  nameContainer: {
-    alignItems: "center",
-    textAlign: "center",
-    marginBottom: 3,
+    marginBottom: 4,
   },
   name: {
     fontSize: 22,
     fontFamily: "Times-Bold",
     textAlign: "center",
     letterSpacing: 0.3,
+    lineHeight: 1.2,
   },
   contactContainer: {
-    alignItems: "center",
-    textAlign: "center",
     width: "100%",
+    textAlign: "center",
   },
   contactLine: {
     fontSize: 9,
@@ -393,7 +387,7 @@ export function ResumePdfDocument({
       <Page size="LETTER" style={s.page}>
         {/* Heading / Contact */}
         <View style={s.header}>
-          <View style={s.nameContainer}>
+          <View>
             <Text style={s.name}>{data.profile.name}</Text>
           </View>
           <View style={s.contactContainer}>
