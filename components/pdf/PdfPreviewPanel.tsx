@@ -1,62 +1,46 @@
-"use client"
+"use client";
 
-import { ResumeDataType } from "@/app/data/data"
-import dynamic from "next/dynamic"
-import { ResumePdfDocumnet } from "./ResumePdfDocument"
-import { Button } from "../ui/button"
-
+import { ResumeDataType } from "@/app/data/data";
+import dynamic from "next/dynamic";
+import { ResumePdfDocumnet } from "./ResumePdfDocument";
+import { Loader2 } from "lucide-react";
 
 const PDFViewer = dynamic(
-    () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
-    { ssr: false }
-);
-const PDFDownloadLink = dynamic(
-    () => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink),
-    { ssr: false }
+  () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-400">
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+        <p className="text-xs">Loading PDF Preview...</p>
+      </div>
+    ),
+  }
 );
 
 interface PdfPreviewPanelProps {
-    data: ResumeDataType,
-    sectionOrder?: string[]
+  data: ResumeDataType;
+  sectionOrder?: string[];
 }
 
-export default function PdfPreviewPanel(
-    {
-        data,
-        sectionOrder
-    }: PdfPreviewPanelProps
-) {
-    //document 
-    const doc = <ResumePdfDocumnet data={data} sectionOrder={sectionOrder} />
+export default function PdfPreviewPanel({
+  data,
+  sectionOrder,
+}: PdfPreviewPanelProps) {
+  const doc = <ResumePdfDocumnet data={data} sectionOrder={sectionOrder} />;
 
-    const fileName = `${data.profile.name.replace(/\s+/g, "_")}_Resume.pdf`;
-
-
-    return (
-        <div>
-            <PDFDownloadLink document={doc} fileName={fileName}>
-                {
-                    ({ loading }: { loading: boolean }) => (
-                        <Button disabled={loading}>
-                            {loading ? "Generating..." : "Download PDF"}
-                        </Button>
-                    )
-                }
-            </PDFDownloadLink>
-
-            <div>
-                <PDFViewer width="100%" height="100%" showToolbar={false}>
-                    {doc}
-                </PDFViewer>
-            </div>
-
-            {/* Mobile fallback */}
-            <div className="flex-1 md:hidden flex flex-col items-center justify-center gap-4 p-8">
-                <p className="text-sm text-zinc-500 text-center">
-                    PDF preview is available on desktop.
-                    Tap the button above to download your resume.
-                </p>
-            </div>
-        </div>
-    )
+  return (
+    <div className="w-full h-full flex-1 flex flex-col items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
+      <div className="w-full h-full max-w-4xl bg-zinc-900 rounded-xl overflow-hidden shadow-2xl border border-zinc-800/80 flex flex-col">
+        <PDFViewer
+          width="100%"
+          height="100%"
+          showToolbar={false}
+          className="w-full h-full border-none"
+        >
+          {doc}
+        </PDFViewer>
+      </div>
+    </div>
+  );
 }

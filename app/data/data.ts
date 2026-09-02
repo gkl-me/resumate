@@ -68,61 +68,59 @@ export interface ResumeDataType {
 
 export const ResumeData: ResumeDataType = {
     profile: {
-        name: "Alex Morgan",
-        phone: "+1 987 654 3210",
-        email: "alex.morgan.dev@gmail.com",
-        linkedin: "linkedin.com/in/alexmorgan",
-        github: "github.com/alexmorgan",
-        website: "alexmorgan.dev",
+        name: "John Doe",
+        phone: "+1 415 555 0198",
+        email: "john.doe@example.com",
+
+        location: "San Francisco, CA, USA",
+
+        linkedin: "linkedin.com/in/johndoe",
+        github: "github.com/johndoe",
+        website: "johndoe.dev",
+
         aboutme:
-            "Full Stack Developer with 4+ years of experience building scalable web applications, SaaS platforms, and RESTful APIs. Experienced in React, Next.js, Node.js, TypeScript, MongoDB, and PostgreSQL. Passionate about designing clean architectures, solving complex problems, and delivering reliable products from development to production."
+            "Full-Stack Developer experienced in building scalable SaaS platforms, real-time applications, and modern web systems. Skilled in TypeScript, React, Next.js, Node.js, Express.js, PostgreSQL, MongoDB, and cloud infrastructure. Passionate about designing reliable backend systems, building intuitive user experiences, and taking products from concept to production."
     },
 
     experience: [
         {
-            company: "TechNova Solutions",
-            role: "Full Stack Developer",
-            startDate: "2024",
+            company: "Vertex Labs",
+            role: "Full-Stack Software Engineer",
+            startDate: "Jan 2025",
             endDate: "Present",
-            place: "Bangalore, India",
+
+            place: "San Francisco, CA",
+
             summary: [
-                "Developed and maintained scalable SaaS applications using React, Next.js, Node.js, and TypeScript.",
-                "Designed and implemented RESTful APIs and backend services using Express.js and PostgreSQL.",
-                "Implemented Redis caching and background job processing to improve application performance and reliability.",
-                "Collaborated with designers and product teams to deliver responsive and user-friendly features.",
-                "Containerized applications using Docker and managed CI/CD workflows for production deployments."
+                "Designed and developed scalable web applications using Next.js, TypeScript, and Node.js.",
+                "Built REST APIs and backend services using Express.js, PostgreSQL, and Prisma ORM.",
+                "Implemented asynchronous background processing using BullMQ and Redis.",
+                "Developed role-based access control and authentication systems for multi-user applications.",
+                "Improved API performance through database query optimization, caching, and efficient data access patterns.",
+                "Collaborated with product, design, and engineering teams to deliver features from concept to production."
             ]
         },
+
         {
-            company: "CodeCraft Technologies",
-            role: "Junior Full Stack Developer",
-            startDate: "2022",
-            endDate: "2024",
-            place: "Kochi, India",
+            company: "Northstar Digital",
+            role: "Software Engineer",
+            startDate: "Jun 2023",
+            endDate: "Dec 2024",
+
+            place: "Remote",
+
             summary: [
-                "Built responsive web applications using React, TypeScript, Node.js, and MongoDB.",
-                "Developed authentication, role-based access control, and secure REST APIs.",
-                "Integrated third-party services including payment gateways, email services, and cloud storage.",
-                "Optimized database queries and API response times for high-traffic application modules.",
-                "Worked closely with senior developers to design reusable components and maintain clean code."
+                "Developed responsive web applications using React, TypeScript, and modern frontend architecture.",
+                "Built reusable UI components and frontend systems using TailwindCSS and React.",
+                "Integrated REST and HTTP APIs using Axios and RTK Query.",
+                "Implemented form validation and type-safe API contracts using Zod.",
+                "Optimized frontend performance through lazy loading, code splitting, and efficient state management.",
+                "Worked with backend engineers to design API contracts and resolve production issues."
             ]
         }
     ],
 
     skill: [
-        {
-            category: "Frontend",
-            skills: [
-                "React.js",
-                "Next.js",
-                "TypeScript",
-                "JavaScript",
-                "HTML5",
-                "CSS3",
-                "Tailwind CSS",
-                "Redux Toolkit"
-            ]
-        },
         {
             category: "Backend",
             skills: [
@@ -131,82 +129,230 @@ export const ResumeData: ResumeDataType = {
                 "REST APIs",
                 "PostgreSQL",
                 "MongoDB",
+                "Prisma ORM",
                 "Redis",
-                "Prisma"
+                "BullMQ"
             ]
         },
+
         {
-            category: "DevOps & Tools",
+            category: "Frontend",
+            skills: [
+                "React.js",
+                "Next.js",
+                "TypeScript",
+                "JavaScript",
+                "Redux Toolkit",
+                "RTK Query",
+                "TailwindCSS"
+            ]
+        },
+
+        {
+            category: "DevOps",
             skills: [
                 "Docker",
-                "Git",
-                "GitHub Actions",
+                "Docker Compose",
                 "AWS",
+                "EC2",
                 "Nginx",
-                "Linux",
-                "Postman"
+                "PM2",
+                "GitHub Actions",
+                "Vercel"
+            ]
+        },
+
+        {
+            category: "Tools",
+            skills: [
+                "Git",
+                "GitHub",
+                "Postman",
+                "Swagger",
+                "Figma",
+                "VS Code",
+                "Linux"
+            ]
+        },
+
+        {
+            category: "Other Expertise",
+            skills: [
+                "OOP",
+                "SOLID Principles",
+                "Clean Architecture",
+                "WebSockets",
+                "Socket.io",
+                "Authentication",
+                "Payment Integration",
+                "Agile & Scrum"
             ]
         }
     ],
 
     project: [
         {
-            name: "TaskFlow - Project Management SaaS",
+            name: "TaskFlow - Multi-Tenant Project Management SaaS",
+
             highlights: [
-                "Built a multi-tenant project management platform supporting teams, projects, tasks, and role-based access control.",
-                "Implemented real-time task updates and notifications using WebSockets.",
-                "Designed REST APIs and database architecture for scalable project and workspace management.",
-                "Implemented Redis-based caching and BullMQ background jobs for asynchronous processing."
+                "Built a multi-tenant project management platform supporting organizations, teams, projects, and role-based permissions.",
+                "Designed scalable backend APIs using Node.js, Express.js, TypeScript, and PostgreSQL.",
+                "Implemented real-time task updates and notifications using Socket.io.",
+                "Integrated Stripe for subscription management and recurring billing.",
+                "Implemented asynchronous email and notification workflows using BullMQ and Redis.",
+                "Containerized the application using Docker and deployed production workloads on AWS."
             ],
+
             techStack: [
                 "Next.js",
                 "TypeScript",
-                "Node.js",
                 "Express.js",
-                "MongoDB",
+                "PostgreSQL",
+                "Prisma",
                 "Redis",
-                "BullMQ"
+                "BullMQ",
+                "Socket.io",
+                "Stripe",
+                "Docker"
             ],
-            liveLink: "https://taskflow-demo.example.com",
-            github: "https://github.com/alexmorgan/taskflow",
+
+            liveLink: "https://taskflow.example.com",
+            github: "https://github.com/johndoe/taskflow",
+            year: "2026"
+        },
+
+        {
+            name: "CodeArena - Competitive Programming Platform",
+
+            highlights: [
+                "Developed an online competitive programming platform with contests, submissions, rankings, and user profiles.",
+                "Implemented real-time contest updates and leaderboard synchronization using WebSockets.",
+                "Built authentication using Google OAuth and JWT-based sessions.",
+                "Designed a dynamic ranking system based on contest performance and historical results.",
+                "Implemented pagination and optimized database queries for large leaderboard datasets."
+            ],
+
+            techStack: [
+                "Next.js",
+                "TypeScript",
+                "Supabase",
+                "PostgreSQL",
+                "Socket.io",
+                "TailwindCSS"
+            ],
+
+            liveLink: "https://codearena.example.com",
+            github: "https://github.com/johndoe/codearena",
             year: "2025"
         },
+
         {
             name: "ShopSphere - E-commerce Platform",
+
             highlights: [
-                "Developed a full-stack e-commerce platform with product catalog, shopping cart, checkout, and order management.",
-                "Integrated Stripe payment processing with secure payment and order workflows.",
-                "Built an admin dashboard for managing products, inventory, users, and orders.",
-                "Implemented product search, filtering, coupons, wishlist, and sales analytics."
+                "Built a full-stack e-commerce platform with product catalogs, shopping carts, checkout, and order management.",
+                "Integrated Stripe for secure online payment processing.",
+                "Developed an admin dashboard for managing products, inventory, customers, and orders.",
+                "Implemented coupon, discount, wishlist, and referral systems.",
+                "Built sales analytics dashboards for monitoring revenue and order trends.",
+                "Deployed production workloads on AWS using Nginx and PM2."
             ],
+
             techStack: [
                 "React",
                 "Node.js",
                 "Express.js",
                 "MongoDB",
-                "TypeScript",
-                "Stripe"
+                "Stripe",
+                "EJS",
+                "AWS",
+                "Nginx"
             ],
-            liveLink: "https://shopsphere-demo.example.com",
-            github: "https://github.com/alexmorgan/shopsphere",
+
+            github: "https://github.com/johndoe/shopsphere",
+            year: "2025"
+        },
+
+        {
+            name: "MovieVault - Movie Discovery Platform",
+
+            highlights: [
+                "Built a movie discovery platform using external movie APIs.",
+                "Implemented search, filtering, genre-based browsing, and personalized watchlists.",
+                "Added server-side caching to reduce repeated API requests and improve response times.",
+                "Implemented PostgreSQL persistence using Prisma ORM.",
+                "Designed a responsive interface optimized for desktop, tablet, and mobile devices."
+            ],
+
+            techStack: [
+                "Next.js",
+                "TypeScript",
+                "PostgreSQL",
+                "Prisma",
+                "TMDB API",
+                "TailwindCSS"
+            ],
+
+            liveLink: "https://movievault.example.com",
+            github: "https://github.com/johndoe/movievault",
+            year: "2024"
+        },
+
+        {
+            name: "ConnectNow - Real-Time Chat Application",
+
+            highlights: [
+                "Built a real-time communication platform supporting one-to-one and group conversations.",
+                "Implemented real-time messaging, typing indicators, online presence, and message delivery status.",
+                "Used Socket.io for bidirectional communication between clients and servers.",
+                "Implemented JWT authentication and protected API endpoints.",
+                "Structured the application as a monorepo for scalable development and maintenance."
+            ],
+
+            techStack: [
+                "React",
+                "Node.js",
+                "Express.js",
+                "TypeScript",
+                "Socket.io",
+                "MongoDB",
+                "Turborepo"
+            ],
+
+            github: "https://github.com/johndoe/connectnow",
             year: "2024"
         }
     ],
 
     education: [
         {
-            institute: "National Institute of Technology",
-            degree: "Bachelor of Technology in Computer Science",
-            place: "Kozhikode, India",
-            startYear: "2018",
-            endYear: "2022"
+            institute: "University of California, Berkeley",
+            degree: "B.S. in Computer Science",
+
+            place: "Berkeley, CA, USA",
+
+            startYear: "2020",
+            endYear: "2024",
+
+            description:
+                "Coursework included data structures and algorithms, database systems, operating systems, computer networks, software engineering, and distributed systems.",
+
+            grade: "3.7 GPA"
         },
+
         {
-            institute: "Kerala Higher Secondary School",
-            degree: "Higher Secondary Education - Computer Science",
-            place: "Kochi, India",
-            startYear: "2016",
-            endYear: "2018"
+            institute: "Stanford Online",
+            degree: "Professional Certificate in Cloud Application Development",
+
+            place: "Online",
+
+            startYear: "2024",
+            endYear: "2025",
+
+            description:
+                "Focused on cloud architecture, distributed systems, containerization, APIs, application deployment, and scalable backend development.",
+
+            grade: "Completed with Distinction"
         }
     ]
 };

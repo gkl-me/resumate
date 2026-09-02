@@ -1,21 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SectionList from "@/components/builder/SectionList";
-import ResumePreview from "@/components/builder/ResumePreview";
 import { useResumeStore } from "@/hooks/useResumeStore";
 import dynamic from "next/dynamic";
-
 
 const PdfPreviewPanel = dynamic(
   () => import("@/components/pdf/PdfPreviewPanel"),
   { ssr: false }
 );
 
-
 export default function BuilderPage() {
-
   const [mobileTab, setMobileTab] = useState<"sections" | "preview">("sections");
 
   const {
@@ -26,9 +22,7 @@ export default function BuilderPage() {
     updateSkills,
     updateProjects,
     updateEducation,
-    reorderSections
-  } = useResumeStore()
-
+  } = useResumeStore();
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
@@ -42,13 +36,19 @@ export default function BuilderPage() {
       <BuilderHeader
         onToggleMobileTab={setMobileTab}
         activeTab={mobileTab}
+        data={data}
+        sectionOrder={sectionOrder}
       />
 
       {/* Main Content */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* ===== DESKTOP LAYOUT ===== */}
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Left: Section Editor */}
-        <aside className="hidden md:flex flex-col w-[380px] lg:w-[420px] flex-shrink-0 border-r border-zinc-800/60 bg-zinc-950/80 overflow-hidden">
+        <aside
+          className={`
+            ${mobileTab === "sections" ? "flex" : "hidden"}
+            md:flex flex-col w-full md:w-[380px] lg:w-[420px] flex-shrink-0 border-r border-zinc-800/60 bg-zinc-950/80 overflow-hidden h-full
+          `}
+        >
           <SectionList
             data={data}
             onUpdateProfile={updateProfile}
@@ -60,7 +60,12 @@ export default function BuilderPage() {
         </aside>
 
         {/* Right: Resume Preview */}
-        <main className="hidden md:flex flex-1 flex-col overflow-hidden bg-zinc-900/20">
+        <main
+          className={`
+            ${mobileTab === "preview" ? "flex" : "hidden"}
+            md:flex flex-1 flex-col overflow-hidden bg-zinc-900/20 h-full
+          `}
+        >
           <PdfPreviewPanel data={data} sectionOrder={sectionOrder} />
         </main>
       </div>
