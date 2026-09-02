@@ -7,13 +7,11 @@ import Link from "next/link";
 interface BuilderHeaderProps {
   onToggleMobileTab?: (tab: "sections" | "preview") => void;
   activeTab?: "sections" | "preview";
-  onReset?: () => void;
 }
 
 export default function BuilderHeader({
   onToggleMobileTab,
   activeTab,
-  onReset,
 }: BuilderHeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md">
@@ -39,42 +37,25 @@ export default function BuilderHeader({
           <div className="flex md:hidden rounded-lg border border-zinc-800 bg-zinc-900 p-0.5 gap-0.5">
             <button
               onClick={() => onToggleMobileTab?.("sections")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === "sections"
-                  ? "bg-indigo-500 text-white"
-                  : "text-zinc-400 hover:text-zinc-200"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === "sections"
+                ? "bg-indigo-500 text-white"
+                : "text-zinc-400 hover:text-zinc-200"
+                }`}
             >
               <Menu className="h-3 w-3" />
               Sections
             </button>
             <button
               onClick={() => onToggleMobileTab?.("preview")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === "preview"
-                  ? "bg-indigo-500 text-white"
-                  : "text-zinc-400 hover:text-zinc-200"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === "preview"
+                ? "bg-indigo-500 text-white"
+                : "text-zinc-400 hover:text-zinc-200"
+                }`}
             >
               <Eye className="h-3 w-3" />
               Preview
             </button>
           </div>
-
-          {/* Reset Demo Button */}
-          {onReset && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReset}
-              className="flex items-center gap-1.5 border-zinc-700/80 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs h-8 px-2.5 sm:px-3 transition-all hover:border-zinc-600 active:scale-95"
-              title="Reset resume data to demo default"
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-zinc-400 group-hover:rotate-180 transition-transform" />
-              <span className="hidden sm:inline">Reset Demo</span>
-              <span className="sm:hidden">Reset</span>
-            </Button>
-          )}
 
           {/* Download PDF */}
           <Button
