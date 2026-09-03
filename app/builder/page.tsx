@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import SectionList from "@/components/builder/SectionList";
 import { useResumeStore } from "@/hooks/useResumeStore";
@@ -26,7 +26,39 @@ export default function BuilderPage() {
     updateSkills,
     updateProjects,
     updateEducation,
+    // Undo & Redo controls
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useResumeStore();
+
+  // Global Keyboard Shortcuts: Undo (Ctrl+Z / Cmd+Z) and Redo (Ctrl+Y / Cmd+Shift+Z)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = typeof window !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+      const isModifier = isMac ? e.metaKey : e.ctrlKey;
+
+      if (!isModifier) return;
+
+      // Redo: Ctrl+Shift+Z, Cmd+Shift+Z, or Ctrl+Y
+      if (
+        (e.key.toLowerCase() === "z" && e.shiftKey) ||
+        e.key.toLowerCase() === "y"
+      ) {
+        e.preventDefault();
+        redo();
+      }
+      // Undo: Ctrl+Z or Cmd+Z
+      else if (e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
 
   const visibleSectionOrder = sectionOrder.filter(
     (id) => !hiddenSections.includes(id)
@@ -47,6 +79,10 @@ export default function BuilderPage() {
         data={data}
         sectionOrder={visibleSectionOrder}
         onReset={resetData}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
       />
 
       {/* Main Content */}

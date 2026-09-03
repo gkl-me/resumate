@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Terminal, Eye, Download, Menu, Loader2, RotateCcw } from "lucide-react";
+import { Terminal, Eye, Download, Menu, Loader2, RotateCcw, Undo2, Redo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { ResumeDataType } from "@/app/data/data";
@@ -13,6 +13,10 @@ interface BuilderHeaderProps {
   data?: ResumeDataType;
   sectionOrder?: string[];
   onReset?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export default function BuilderHeader({
@@ -21,6 +25,10 @@ export default function BuilderHeader({
   data,
   sectionOrder,
   onReset,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: BuilderHeaderProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -99,6 +107,33 @@ export default function BuilderHeader({
               Preview
             </button>
           </div>
+
+          {/* Undo & Redo Controls */}
+          {(onUndo || onRedo) && (
+            <div className="flex items-center rounded-lg border border-zinc-800 bg-zinc-900/60 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={onUndo}
+                disabled={!canUndo}
+                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer"
+                title="Undo (Ctrl+Z)"
+                aria-label="Undo"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+              </button>
+              <div className="w-[1px] h-3 bg-zinc-800 mx-0.5" />
+              <button
+                type="button"
+                onClick={onRedo}
+                disabled={!canRedo}
+                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer"
+                title="Redo (Ctrl+Y or Ctrl+Shift+Z)"
+                aria-label="Redo"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Reset Button */}
           {onReset && (
