@@ -17,6 +17,7 @@ export default function BuilderPage() {
   const {
     data,
     sectionOrder,
+    reorderSections,
     updateProfile,
     updateExperience,
     updateSkills,
@@ -51,6 +52,8 @@ export default function BuilderPage() {
         >
           <SectionList
             data={data}
+            sectionOrder={sectionOrder}
+            onReorderSections={reorderSections}
             onUpdateProfile={updateProfile}
             onUpdateExperience={updateExperience}
             onUpdateSkills={updateSkills}
