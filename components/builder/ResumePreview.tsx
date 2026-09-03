@@ -1,223 +1,330 @@
 "use client";
 
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Linkedin,
-  Github,
-  Globe,
-} from "lucide-react";
 import type { ResumeDataType } from "@/app/data/data";
 
 interface ResumePreviewProps {
   data: ResumeDataType;
+  sectionOrder?: string[];
 }
 
-export default function ResumePreview({ data }: ResumePreviewProps) {
+export default function ResumePreview({
+  data,
+  sectionOrder = ["profile", "experience", "skill", "project", "education"],
+}: ResumePreviewProps) {
   const { profile, experience, skill, project, education } = data;
 
+  // Build contact items
+  const contactParts: { label: string; href?: string }[] = [];
+
+  if (profile.phone) {
+    contactParts.push({ label: profile.phone });
+  }
+  if (profile.email) {
+    contactParts.push({
+      label: profile.email,
+      href: `mailto:${profile.email}`,
+    });
+  }
+  if (profile.location) {
+    contactParts.push({ label: profile.location });
+  }
+  if (profile.linkedin) {
+    const href = profile.linkedin.startsWith("http")
+      ? profile.linkedin
+      : `https://${profile.linkedin}`;
+    contactParts.push({
+      label: profile.linkedin.replace(/^https?:\/\//, ""),
+      href,
+    });
+  }
+  if (profile.github) {
+    const href = profile.github.startsWith("http")
+      ? profile.github
+      : `https://${profile.github}`;
+    contactParts.push({
+      label: profile.github.replace(/^https?:\/\//, ""),
+      href,
+    });
+  }
+  if (profile.website) {
+    const href = profile.website.startsWith("http")
+      ? profile.website
+      : `https://${profile.website}`;
+    contactParts.push({
+      label: profile.website.replace(/^https?:\/\//, ""),
+      href,
+    });
+  }
+
+  const renderAboutMe = () => {
+    if (!profile.aboutme) return null;
+    return (
+      <section className="mt-3">
+        <h2 className="text-xs sm:text-[13px] font-bold uppercase tracking-wider border-b border-black pb-0.5 mb-1.5 text-black font-serif">
+          About Me
+        </h2>
+        <p className="text-[11px] sm:text-xs leading-relaxed text-zinc-900 text-justify font-serif">
+          {profile.aboutme}
+        </p>
+      </section>
+    );
+  };
+
+  const renderExperience = () => {
+    if (!experience || experience.length === 0) return null;
+    return (
+      <section className="mt-3">
+        <h2 className="text-xs sm:text-[13px] font-bold uppercase tracking-wider border-b border-black pb-0.5 mb-1.5 text-black font-serif">
+          Experience
+        </h2>
+        <div className="space-y-2">
+          {experience.map((exp, i) => (
+            <div key={i} className="text-[11px] sm:text-xs font-serif">
+              <div className="flex justify-between items-baseline">
+                <span className="font-bold text-black">{exp.role}</span>
+                <span className="text-[10px] sm:text-[11px] text-zinc-900 font-normal">
+                  {exp.startDate} {exp.endDate ? `– ${exp.endDate}` : ""}
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline text-[10px] sm:text-[11px]">
+                <span className="italic text-zinc-800">{exp.company}</span>
+                {exp.place && (
+                  <span className="italic text-zinc-700">{exp.place}</span>
+                )}
+              </div>
+              {exp.summary && exp.summary.length > 0 && (
+                <ul className="list-disc ml-5 mt-0.5 space-y-0.5 text-[10px] sm:text-[11px] leading-snug text-zinc-900">
+                  {exp.summary.map((pt, j) => (
+                    <li key={j} className="pl-0.5">
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const renderSkills = () => {
+    if (!skill || skill.length === 0) return null;
+    return (
+      <section className="mt-3">
+        <h2 className="text-xs sm:text-[13px] font-bold uppercase tracking-wider border-b border-black pb-0.5 mb-1.5 text-black font-serif">
+          Technical Skills
+        </h2>
+        <div className="text-[10px] sm:text-[11px] leading-relaxed text-zinc-900 font-serif space-y-0.5">
+          {skill.map((s, i) => (
+            <div key={i}>
+              <span className="font-bold text-black">{s.category}: </span>
+              <span>
+                {Array.isArray(s.skills) ? s.skills.join(", ") : s.skills}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const renderProjects = () => {
+    if (!project || project.length === 0) return null;
+    return (
+      <section className="mt-3">
+        <h2 className="text-xs sm:text-[13px] font-bold uppercase tracking-wider border-b border-black pb-0.5 mb-1.5 text-black font-serif">
+          Projects
+        </h2>
+        <div className="space-y-2">
+          {project.map((p, i) => (
+            <div key={i} className="text-[11px] sm:text-xs font-serif">
+              <div className="flex justify-between items-baseline">
+                <div>
+                  <span className="font-bold text-black">{p.name}</span>
+                  {p.techStack && p.techStack.length > 0 && (
+                    <span className="italic text-zinc-800">
+                      {" | "}
+                      {Array.isArray(p.techStack)
+                        ? p.techStack.join(", ")
+                        : p.techStack}
+                    </span>
+                  )}
+                </div>
+                {p.year && (
+                  <span className="text-[10px] sm:text-[11px] text-zinc-900 font-normal">
+                    {p.year}
+                  </span>
+                )}
+              </div>
+              {p.highlights && p.highlights.length > 0 && (
+                <ul className="list-disc ml-5 mt-0.5 space-y-0.5 text-[10px] sm:text-[11px] leading-snug text-zinc-900">
+                  {p.highlights.map((h, j) => (
+                    <li key={j} className="pl-0.5">
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {(p.liveLink || p.github) && (
+                <ul className="list-disc ml-5 text-[10px] sm:text-[11px] text-zinc-900">
+                  <li className="pl-0.5">
+                    {p.liveLink && (
+                      <span>
+                        Live:{" "}
+                        <a
+                          href={
+                            p.liveLink.startsWith("http")
+                              ? p.liveLink
+                              : `https://${p.liveLink}`
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline hover:text-indigo-600"
+                        >
+                          {p.liveLink.replace(/^https?:\/\//, "")}
+                        </a>
+                        {p.github ? " | " : ""}
+                      </span>
+                    )}
+                    {p.github && (
+                      <span>
+                        GitHub:{" "}
+                        <a
+                          href={
+                            p.github.startsWith("http")
+                              ? p.github
+                              : `https://${p.github}`
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline hover:text-indigo-600"
+                        >
+                          {p.github.replace(/^https?:\/\//, "")}
+                        </a>
+                      </span>
+                    )}
+                  </li>
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const renderEducation = () => {
+    if (!education || education.length === 0) return null;
+    return (
+      <section className="mt-3">
+        <h2 className="text-xs sm:text-[13px] font-bold uppercase tracking-wider border-b border-black pb-0.5 mb-1.5 text-black font-serif">
+          Education
+        </h2>
+        <div className="space-y-2">
+          {education.map((edu, i) => (
+            <div key={i} className="text-[11px] sm:text-xs font-serif">
+              <div className="flex justify-between items-baseline">
+                <span className="font-bold text-black">{edu.institute}</span>
+                {edu.place && (
+                  <span className="italic text-zinc-700 text-[10px] sm:text-[11px]">
+                    {edu.place}
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-baseline text-[10px] sm:text-[11px]">
+                <span className="italic text-zinc-800">
+                  {edu.degree}
+                  {edu.grade ? ` – ${edu.grade}` : ""}
+                </span>
+                <span className="text-zinc-900 font-normal">
+                  {edu.startYear} {edu.endYear ? `– ${edu.endYear}` : ""}
+                </span>
+              </div>
+              {edu.description && (
+                <ul className="list-disc ml-5 mt-0.5 text-[10px] sm:text-[11px] text-zinc-900">
+                  <li className="pl-0.5">{edu.description}</li>
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const sectionMap: Record<string, () => React.ReactNode> = {
+    aboutme: renderAboutMe,
+    about: renderAboutMe,
+    experience: renderExperience,
+    skills: renderSkills,
+    skill: renderSkills,
+    projects: renderProjects,
+    project: renderProjects,
+    education: renderEducation,
+  };
+
   return (
-    <div className="w-full h-full overflow-y-auto bg-zinc-900/30 p-4 md:p-6">
-      {/* Paper-like resume */}
-      <div className="mx-auto max-w-[780px] bg-white text-zinc-900 shadow-2xl shadow-black/40 rounded-lg overflow-hidden">
-        {/* Header */}
-        <div className="px-10 pt-10 pb-6 border-b-2 border-indigo-600">
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 uppercase">
+    <div className="w-full h-full overflow-y-auto p-2 sm:p-4 bg-zinc-900/30 custom-scrollbar">
+      {/* Paper Container matching LaTeX */}
+      <div
+        className="mx-auto max-w-[800px] bg-white text-black shadow-2xl rounded-sm p-6 sm:p-10 my-2"
+        style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+      >
+        {/* Centered Heading */}
+        <div className="text-center mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">
             {profile.name}
           </h1>
-
-          {/* Contact Row */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-zinc-600">
-            {profile.phone && (
-              <span className="flex items-center gap-1">
-                <Phone className="h-3 w-3 text-indigo-600" />
-                {profile.phone}
+          <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[11px] sm:text-xs text-black mt-1.5 leading-snug">
+            {contactParts.map((item, index) => (
+              <span key={index} className="inline-flex items-center">
+                {item.href ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline hover:text-indigo-600"
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <span>{item.label}</span>
+                )}
+                {index < contactParts.length - 1 && (
+                  <span className="mx-1 text-black font-normal">|</span>
+                )}
               </span>
-            )}
-            {profile.email && (
-              <span className="flex items-center gap-1">
-                <Mail className="h-3 w-3 text-indigo-600" />
-                {profile.email}
-              </span>
-            )}
-            {profile.linkedin && (
-              <span className="flex items-center gap-1">
-                <Linkedin className="h-3 w-3 text-indigo-600" />
-                {profile.linkedin}
-              </span>
-            )}
-            {profile.github && (
-              <span className="flex items-center gap-1">
-                <Github className="h-3 w-3 text-indigo-600" />
-                {profile.github}
-              </span>
-            )}
-            {profile.website && (
-              <span className="flex items-center gap-1">
-                <Globe className="h-3 w-3 text-indigo-600" />
-                {profile.website}
-              </span>
-            )}
-            {profile.location && (
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-indigo-600" />
-                {profile.location}
-              </span>
-            )}
+            ))}
           </div>
         </div>
 
-        <div className="px-10 pb-10 pt-6 space-y-7">
-          {/* About Me */}
-          {profile.aboutme && (
-            <section>
-              <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">
-                About Me
-              </h2>
-              <div className="h-px bg-indigo-100 mb-3" />
-              <p className="text-[11px] leading-relaxed text-zinc-700">
-                {profile.aboutme}
-              </p>
-            </section>
-          )}
+        {/* About Me */}
+        {profile.aboutme && renderAboutMe()}
 
-          {/* Experience */}
-          {experience.length > 0 && (
-            <section>
-              <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">
-                Experience
-              </h2>
-              <div className="h-px bg-indigo-100 mb-3" />
-              <div className="space-y-5">
-                {experience.map((exp, i) => (
-                  <div key={i}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-bold text-zinc-900">
-                          {exp.company}
-                        </p>
-                        <p className="text-[11px] font-semibold text-indigo-600">
-                          {exp.role}
-                        </p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[10px] text-zinc-500">
-                          {exp.startDate} – {exp.endDate ?? "Present"}
-                        </p>
-                        {exp.place && (
-                          <p className="text-[10px] text-zinc-400">{exp.place}</p>
-                        )}
-                      </div>
-                    </div>
-                    <ul className="mt-2 space-y-1 pl-4">
-                      {exp.summary.map((point, j) => (
-                        <li
-                          key={j}
-                          className="text-[10px] text-zinc-700 leading-relaxed list-disc"
-                        >
-                          {point}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Skills */}
-          {skill.length > 0 && (
-            <section>
-              <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">
-                Skills
-              </h2>
-              <div className="h-px bg-indigo-100 mb-3" />
-              <div className="space-y-2">
-                {skill.map((s, i) => (
-                  <div key={i} className="flex gap-2 text-[10px]">
-                    <span className="font-bold text-zinc-800 whitespace-nowrap min-w-[80px]">
-                      {s.category}:
-                    </span>
-                    <span className="text-zinc-600">{s.skills.join(", ")}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Projects */}
-          {project.length > 0 && (
-            <section>
-              <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">
-                Projects
-              </h2>
-              <div className="h-px bg-indigo-100 mb-3" />
-              <div className="space-y-5">
-                {project.map((p, i) => (
-                  <div key={i}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-bold text-zinc-900">{p.name}</p>
-                        <p className="text-[10px] text-indigo-500 mt-0.5">
-                          {p.techStack.join(" · ")}
-                        </p>
-                      </div>
-                      {p.year && (
-                        <p className="text-[10px] text-zinc-500 flex-shrink-0">
-                          {p.year}
-                        </p>
-                      )}
-                    </div>
-                    <ul className="mt-2 space-y-1 pl-4">
-                      {p.highlights.map((h, j) => (
-                        <li
-                          key={j}
-                          className="text-[10px] text-zinc-700 leading-relaxed list-disc"
-                        >
-                          {h}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Education */}
-          {education.length > 0 && (
-            <section>
-              <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">
-                Education
-              </h2>
-              <div className="h-px bg-indigo-100 mb-3" />
-              <div className="space-y-3">
-                {education.map((edu, i) => (
-                  <div key={i} className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-[11px] font-bold text-zinc-900">
-                        {edu.institute}
-                      </p>
-                      <p className="text-[10px] text-zinc-600">{edu.degree}</p>
-                      {edu.grade && (
-                        <p className="text-[10px] text-indigo-500">{edu.grade}</p>
-                      )}
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-[10px] text-zinc-500">
-                        {edu.startYear} – {edu.endYear ?? "Present"}
-                      </p>
-                      {edu.place && (
-                        <p className="text-[10px] text-zinc-400">{edu.place}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+        {/* Dynamic Sections in order (normalized and deduplicated) */}
+        {(() => {
+          const renderedSet = new Set<string>();
+          return (sectionOrder || [])
+            .map((id) =>
+              id === "skills" ? "skill" : id === "projects" ? "project" : id
+            )
+            .filter((id) => {
+              if (
+                id === "profile" ||
+                id === "aboutme" ||
+                id === "about"
+              )
+                return false;
+              if (renderedSet.has(id)) return false;
+              renderedSet.add(id);
+              return true;
+            })
+            .map((id) => {
+              const renderer = sectionMap[id];
+              return renderer ? <div key={id}>{renderer()}</div> : null;
+            });
+        })()}
       </div>
     </div>
   );

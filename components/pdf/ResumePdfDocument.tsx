@@ -152,7 +152,7 @@ function SectionExperience({ data }: SectionProps) {
     <View style={s.section}>
       <Text style={s.sectionTitle}>Experience</Text>
       {data.experience.map((item, index) => (
-        <View key={index} style={s.entryContainer}>
+        <View key={index} style={s.entryContainer} wrap={false}>
           <View style={s.entryHeaderRow}>
             <Text style={s.bold}>{item.role}</Text>
             <Text style={s.date}>
@@ -182,7 +182,7 @@ function SectionSkills({ data }: SectionProps) {
   if (!data.skill || data.skill.length === 0) return null;
 
   return (
-    <View style={s.section}>
+    <View style={s.section} wrap={false}>
       <Text style={s.sectionTitle}>Technical Skills</Text>
       <View style={s.skillsListContainer}>
         {data.skill.map((item, index) => {
@@ -214,7 +214,7 @@ function SectionProjects({ data }: SectionProps) {
           ? item.techStack.join(", ")
           : item.techStack;
         return (
-          <View key={index} style={s.entryContainer}>
+          <View key={index} style={s.entryContainer} wrap={false}>
             <View style={s.entryHeaderRow}>
               <Text style={{ flex: 1 }}>
                 <Text style={s.bold}>{item.name}</Text>
@@ -286,7 +286,7 @@ function SectionEducation({ data }: SectionProps) {
     <View style={s.section}>
       <Text style={s.sectionTitle}>Education</Text>
       {data.education.map((item, index) => (
-        <View key={index} style={s.entryContainer}>
+        <View key={index} style={s.entryContainer} wrap={false}>
           <View style={s.entryHeaderRow}>
             <Text style={s.bold}>{item.institute}</Text>
             {item.place && <Text style={s.locationItalic}>{item.place}</Text>}
@@ -407,13 +407,29 @@ export function ResumePdfDocument({
         {/* About Me */}
         {data.profile.aboutme && <SectionAboutMe data={data} />}
 
-        {/* Ordered Sections */}
-        {sectionOrder
-          .filter((id) => id !== "profile" && id !== "aboutme" && id !== "about")
-          .map((id) => {
-            const Renderer = SECTION_RENDERERS[id];
-            return Renderer ? <Renderer key={id} data={data} /> : null;
-          })}
+        {/* Ordered Sections (normalized and deduplicated) */}
+        {(() => {
+          const renderedSet = new Set<string>();
+          return (sectionOrder || [])
+            .map((id) =>
+              id === "skills" ? "skill" : id === "projects" ? "project" : id
+            )
+            .filter((id) => {
+              if (
+                id === "profile" ||
+                id === "aboutme" ||
+                id === "about"
+              )
+                return false;
+              if (renderedSet.has(id)) return false;
+              renderedSet.add(id);
+              return true;
+            })
+            .map((id) => {
+              const Renderer = SECTION_RENDERERS[id];
+              return Renderer ? <Renderer key={id} data={data} /> : null;
+            });
+        })()}
       </Page>
     </Document>
   );
