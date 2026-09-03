@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { GripVertical, Plus, ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { User, Briefcase, Code2, FolderGit2, GraduationCap, Award } from "lucide-react";
 import AddSectionModal from "./AddSectionModal";
 import ProfileSection from "./ProfileSection";
@@ -38,9 +38,13 @@ interface SectionListProps {
   onUpdateProjects?: (project: Project[]) => void;
   onUpdateEducation?: (education: Education[]) => void;
 
-  //reorder props
-  sectionOrder?: string[],
-  onReorderSections?: (nuewOrder: string[]) => void;
+  // reorder props
+  sectionOrder?: string[];
+  onReorderSections?: (newOrder: string[]) => void;
+
+  // visibility / hide props
+  hiddenSections?: string[];
+  onToggleVisibility?: (sectionId: string) => void;
 }
 
 const SECTION_META: Record<
@@ -105,9 +109,10 @@ const SECTION_META: Record<
 };
 
 interface SortableAccordionProps {
-  sectionId: string,
-  data: ResumeDataType,
-  isSortable?: boolean,
+  sectionId: string;
+  data: ResumeDataType;
+  isSortable?: boolean;
+  onToggleVisibility?: (sectionId: string) => void;
   onUpdateProfile?: (profile: Profile) => void;
   onUpdateExperience?: (experience: Experience[]) => void;
   onUpdateSkills?: (skill: Skill[]) => void;
@@ -118,9 +123,9 @@ interface SortableAccordionProps {
 function SortableSectionAccordion({
   sectionId,
   isSortable = true,
+  onToggleVisibility,
   ...props
 }: SortableAccordionProps) {
-
   const {
     attributes,
     listeners,
@@ -130,8 +135,8 @@ function SortableSectionAccordion({
     isDragging,
   } = useSortable({
     id: sectionId,
-    disabled: !isSortable
-  })
+    disabled: !isSortable,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -147,11 +152,11 @@ function SortableSectionAccordion({
         isSortable={isSortable}
         dragHandleProps={isSortable ? { ...attributes, ...listeners } : undefined}
         isDragging={isDragging}
+        onToggleVisibility={onToggleVisibility}
         {...props}
       />
     </div>
   );
-
 }
 
 function SectionAccordion({
@@ -163,11 +168,13 @@ function SectionAccordion({
   onUpdateProjects,
   onUpdateEducation,
 
-  //drag and drop reordering
+  // drag and drop reordering
   isSortable,
   isDragging,
-  dragHandleProps
+  dragHandleProps,
 
+  // visibility / hide
+  onToggleVisibility,
 }: {
   sectionId: string;
   data: ResumeDataType;
@@ -177,11 +184,13 @@ function SectionAccordion({
   onUpdateProjects?: (project: Project[]) => void;
   onUpdateEducation?: (education: Education[]) => void;
 
-  //drag and drop reordering
+  // drag and drop reordering
+  isSortable?: boolean;
+  isDragging?: boolean;
+  dragHandleProps?: Record<string, any>;
 
-  isSortable?: boolean,
-  isDragging?: boolean,
-  dragHandleProps?: Record<string, any>
+  // visibility / hide
+  onToggleVisibility?: (sectionId: string) => void;
 }) {
   const [expanded, setExpanded] = useState(sectionId === "profile");
   const meta = SECTION_META[sectionId];
@@ -225,6 +234,7 @@ function SectionAccordion({
         {isSortable ? (
           <div
             {...dragHandleProps}
+            suppressHydrationWarning
             className="p-1 rounded cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 touch-none flex-shrink-0 transition-colors"
             title="Drag to reorder"
             style={{ touchAction: "none" }}
@@ -239,7 +249,7 @@ function SectionAccordion({
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="flex-1 flex items-center gap-3 text-left cursor-pointer"
+          className="flex-1 flex items-center gap-3 text-left cursor-pointer min-w-0"
         >
           {/* Icon */}
           <div
@@ -249,15 +259,37 @@ function SectionAccordion({
           </div>
 
           {/* Label */}
-          <span className="flex-1 text-sm font-semibold text-zinc-200">
+          <span className="flex-1 text-sm font-semibold text-zinc-200 truncate">
             {meta.label}
           </span>
+        </button>
 
-          {/* Chevron */}
+        {/* Hide Section Option (for sortable sections except Profile) */}
+        {isSortable && onToggleVisibility && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVisibility(sectionId);
+            }}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/80 transition-colors flex-shrink-0 cursor-pointer"
+            title="Hide section from resume"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Chevron Button */}
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="p-1 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/80 transition-colors flex-shrink-0 cursor-pointer"
+          title={expanded ? "Collapse section" : "Expand section"}
+        >
           {expanded ? (
-            <ChevronDown className="h-4 w-4 text-zinc-500 transition-transform flex-shrink-0" />
+            <ChevronDown className="h-4 w-4 transition-transform" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-zinc-500 transition-transform flex-shrink-0" />
+            <ChevronRight className="h-4 w-4 transition-transform" />
           )}
         </button>
       </div>
@@ -280,45 +312,43 @@ export default function SectionList({
   onUpdateProjects,
   onUpdateEducation,
 
-  //reorder
+  // reorder
   sectionOrder = ["profile", "experience", "skill", "project", "education"],
-  onReorderSections
+  onReorderSections,
+
+  // visibility / hide
+  hiddenSections = [],
+  onToggleVisibility,
 }: SectionListProps) {
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [activeSections] = useState([
-    "profile",
-    "experience",
-    "skills",
-    "projects",
-    "education",
-  ]);
 
-
-  //config sensor for mobile 
+  // config sensor for mobile 
   const sensors = useSensors(
-
-    //pointer for desktop
+    // pointer for desktop
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
       },
     }),
 
-    //for keyboard
+    // for keyboard
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates
     }),
 
-    //for movile touch screen
+    // for mobile touch screen
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 200,
         tolerance: 6
       }
     })
-  )
+  );
 
-  const sortableSections = sectionOrder.filter((id) => id !== "profile");
+  // Sortable sections are visible sections excluding profile and hidden sections
+  const sortableSections = sectionOrder.filter(
+    (id) => id !== "profile" && !hiddenSections.includes(id)
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -329,8 +359,8 @@ export default function SectionList({
 
     if (oldIndex !== -1 && newIndex !== -1) {
       const reordered = arrayMove(sortableSections, oldIndex, newIndex);
-      // Always prepend 'profile' so it remains first
-      onReorderSections?.(["profile", ...reordered]);
+      // Always prepend 'profile' and keep hidden sections tracked
+      onReorderSections?.(["profile", ...reordered, ...hiddenSections]);
     }
   };
 
@@ -363,6 +393,7 @@ export default function SectionList({
 
           {/* 2. Sortable Sections */}
           <DndContext
+            id="dnd-section-list"
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
@@ -377,6 +408,7 @@ export default function SectionList({
                   sectionId={id}
                   isSortable={true}
                   data={data}
+                  onToggleVisibility={onToggleVisibility}
                   onUpdateExperience={onUpdateExperience}
                   onUpdateSkills={onUpdateSkills}
                   onUpdateProjects={onUpdateProjects}
@@ -385,6 +417,60 @@ export default function SectionList({
               ))}
             </SortableContext>
           </DndContext>
+
+          {/* 3. Hidden / Archived Sections */}
+          {hiddenSections.length > 0 && (
+            <div className="pt-3 mt-3 border-t border-zinc-800/60 space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  <EyeOff className="h-3.5 w-3.5 text-zinc-500" />
+                  <span>Hidden Sections</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700/50 text-zinc-400 font-mono">
+                    {hiddenSections.length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                {hiddenSections.map((id) => {
+                  const meta = SECTION_META[id];
+                  if (!meta) return null;
+                  const Icon = meta.icon;
+
+                  return (
+                    <div
+                      key={id}
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-dashed border-zinc-800/80 bg-zinc-900/30 hover:bg-zinc-900/60 hover:border-zinc-700/60 transition-all group"
+                    >
+                      <div className="flex items-center gap-2.5 opacity-60 group-hover:opacity-90 transition-opacity">
+                        <div
+                          className={`flex h-7 w-7 items-center justify-center rounded-lg ${meta.iconBg} border border-white/5`}
+                        >
+                          <Icon className={`h-3.5 w-3.5 ${meta.iconColor}`} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-zinc-300">
+                            {meta.label}
+                          </p>
+                          <p className="text-[10px] text-zinc-500">Hidden from resume</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => onToggleVisibility?.(id)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-zinc-300 hover:text-white text-xs font-medium transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-95"
+                        title="Unhide and restore to resume"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-indigo-400" />
+                        <span>Unhide</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom hint */}
@@ -398,7 +484,7 @@ export default function SectionList({
       <AddSectionModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        existingSections={activeSections}
+        existingSections={["profile", ...sortableSections]}
       />
     </>
   );

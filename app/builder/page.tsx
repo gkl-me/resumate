@@ -17,13 +17,19 @@ export default function BuilderPage() {
   const {
     data,
     sectionOrder,
+    hiddenSections,
     reorderSections,
+    toggleSectionVisibility,
     updateProfile,
     updateExperience,
     updateSkills,
     updateProjects,
     updateEducation,
   } = useResumeStore();
+
+  const visibleSectionOrder = sectionOrder.filter(
+    (id) => !hiddenSections.includes(id)
+  );
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
@@ -38,7 +44,7 @@ export default function BuilderPage() {
         onToggleMobileTab={setMobileTab}
         activeTab={mobileTab}
         data={data}
-        sectionOrder={sectionOrder}
+        sectionOrder={visibleSectionOrder}
       />
 
       {/* Main Content */}
@@ -53,6 +59,8 @@ export default function BuilderPage() {
           <SectionList
             data={data}
             sectionOrder={sectionOrder}
+            hiddenSections={hiddenSections}
+            onToggleVisibility={toggleSectionVisibility}
             onReorderSections={reorderSections}
             onUpdateProfile={updateProfile}
             onUpdateExperience={updateExperience}
@@ -69,7 +77,7 @@ export default function BuilderPage() {
             md:flex flex-1 flex-col overflow-hidden bg-zinc-900/20 h-full
           `}
         >
-          <PdfPreviewPanel data={data} sectionOrder={sectionOrder} />
+          <PdfPreviewPanel data={data} sectionOrder={visibleSectionOrder} />
         </main>
       </div>
     </div>

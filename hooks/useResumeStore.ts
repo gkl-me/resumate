@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react"
 
 const STORAGE_KEY = 'resumate_user_resume_data'
 const SECTION_ORDER_KEY = 'resumate_section_order'
+const HIDDEN_SECTIONS_KEY = 'resumate_hidden_sections'
 
 const DEFAULT_SECTION_ORDER = ["profile", "experience", "skill", "project", "education"]
 
@@ -15,6 +16,7 @@ export function useResumeStore() {
     const [data, setData] = useState<ResumeDataType>(ResumeData)
 
     const [sectionOrder, setSectionOrder] = useState<string[]>(DEFAULT_SECTION_ORDER)
+    const [hiddenSections, setHiddenSections] = useState<string[]>([])
 
     const [isLoaded, setIsLoaded] = useState(false)
 
@@ -26,6 +28,9 @@ export function useResumeStore() {
 
             const savedOrder = localStorage.getItem(SECTION_ORDER_KEY)
             if (savedOrder) setSectionOrder(JSON.parse(savedOrder))
+
+            const savedHidden = localStorage.getItem(HIDDEN_SECTIONS_KEY)
+            if (savedHidden) setHiddenSections(JSON.parse(savedHidden))
 
         } catch (error) {
 
@@ -93,16 +98,34 @@ export function useResumeStore() {
         }
     }, [])
 
+    const toggleSectionVisibility = useCallback((sectionId: string) => {
+        if (sectionId === "profile") return; // Profile cannot be hidden
+
+        setHiddenSections((prev) => {
+            const next = prev.includes(sectionId)
+                ? prev.filter((id) => id !== sectionId)
+                : [...prev, sectionId];
+            try {
+                localStorage.setItem(HIDDEN_SECTIONS_KEY, JSON.stringify(next));
+            } catch (error) {
+                // error handling
+            }
+            return next;
+        });
+    }, []);
+
     return {
         data,
         isLoaded,
         sectionOrder,
+        hiddenSections,
         updateProfile,
         updateExperience,
         updateSkills,
         updateProjects,
         updateEducation,
-        reorderSections
+        reorderSections,
+        toggleSectionVisibility
     }
 
 }
