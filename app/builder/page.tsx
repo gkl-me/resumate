@@ -20,6 +20,7 @@ export default function BuilderPage() {
     hiddenSections,
     reorderSections,
     toggleSectionVisibility,
+    resetData,
     updateProfile,
     updateExperience,
     updateSkills,
@@ -45,6 +46,7 @@ export default function BuilderPage() {
         activeTab={mobileTab}
         data={data}
         sectionOrder={visibleSectionOrder}
+        onReset={resetData}
       />
 
       {/* Main Content */}

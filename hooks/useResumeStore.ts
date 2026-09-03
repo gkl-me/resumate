@@ -114,6 +114,19 @@ export function useResumeStore() {
         });
     }, []);
 
+    const resetData = useCallback(() => {
+        setData(ResumeData);
+        setSectionOrder(DEFAULT_SECTION_ORDER);
+        setHiddenSections([]);
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ResumeData));
+            localStorage.setItem(SECTION_ORDER_KEY, JSON.stringify(DEFAULT_SECTION_ORDER));
+            localStorage.setItem(HIDDEN_SECTIONS_KEY, JSON.stringify([]));
+        } catch (error) {
+            // error handling
+        }
+    }, []);
+
     return {
         data,
         isLoaded,
@@ -125,7 +138,8 @@ export function useResumeStore() {
         updateProjects,
         updateEducation,
         reorderSections,
-        toggleSectionVisibility
+        toggleSectionVisibility,
+        resetData
     }
 
 }

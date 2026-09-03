@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Terminal, Eye, Download, Menu, Loader2 } from "lucide-react";
+import { Terminal, Eye, Download, Menu, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { ResumeDataType } from "@/app/data/data";
+import ResetConfirmModal from "./ResetConfirmModal";
 
 interface BuilderHeaderProps {
   onToggleMobileTab?: (tab: "sections" | "preview") => void;
   activeTab?: "sections" | "preview";
   data?: ResumeDataType;
   sectionOrder?: string[];
+  onReset?: () => void;
 }
 
 export default function BuilderHeader({
@@ -18,8 +20,10 @@ export default function BuilderHeader({
   activeTab,
   data,
   sectionOrder,
+  onReset,
 }: BuilderHeaderProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const handleDownload = async () => {
     if (!data || isDownloading) return;
@@ -96,6 +100,20 @@ export default function BuilderHeader({
             </button>
           </div>
 
+          {/* Reset Button */}
+          {onReset && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setResetModalOpen(true)}
+              className="flex items-center gap-1.5 border-zinc-800 bg-zinc-900/60 hover:bg-rose-500/10 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 text-xs h-8 px-2.5 sm:px-3 transition-all cursor-pointer"
+              title="Reset resume to default demo data"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </Button>
+          )}
+
           {/* Download PDF */}
           <Button
             size="sm"
@@ -117,6 +135,15 @@ export default function BuilderHeader({
           </Button>
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {onReset && (
+        <ResetConfirmModal
+          open={resetModalOpen}
+          onClose={() => setResetModalOpen(false)}
+          onConfirm={onReset}
+        />
+      )}
     </header>
   );
 }
