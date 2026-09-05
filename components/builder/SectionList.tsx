@@ -11,6 +11,7 @@ import ProjectsSection from "./ProjectsSection";
 import EducationSection from "./EducationSection";
 import type { ResumeDataType, Profile, Experience, Skill, Project, Education } from "@/app/data/data";
 import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   DndContext,
   closestCenter,
@@ -138,8 +139,14 @@ function SortableSectionAccordion({
     disabled: !isSortable,
   });
 
+  // Lock horizontal movement so dragged sections cannot be dragged sideways or off-screen
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: transform
+      ? CSS.Transform.toString({
+          ...transform,
+          x: 0,
+        })
+      : undefined,
     transition,
     zIndex: isDragging ? 50 : "auto",
     opacity: isDragging ? 0.7 : 1,
@@ -396,6 +403,7 @@ export default function SectionList({
             id="dnd-section-list"
             sensors={sensors}
             collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
             onDragEnd={handleDragEnd}
           >
             <SortableContext

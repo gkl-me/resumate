@@ -64,11 +64,11 @@ export default function BuilderHeader({
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md">
-      <div className="flex h-14 items-center justify-between px-4 md:px-6">
+      <div className="flex h-14 items-center justify-between px-2 sm:px-4 md:px-6 gap-1 sm:gap-4 max-w-full">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
-            <Terminal className="h-4 w-4 text-indigo-400" />
+        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group flex-shrink-0" title="Resumate Home">
+          <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
+            <Terminal className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
           </div>
           <span className="font-bold text-zinc-100 text-sm tracking-tight hidden sm:block">
             Resumate
@@ -76,35 +76,38 @@ export default function BuilderHeader({
         </Link>
 
         {/* Center tagline */}
-        <p className="hidden md:block text-xs text-zinc-500 font-medium tracking-wide">
+        <p className="hidden md:block text-xs text-zinc-500 font-medium tracking-wide truncate">
           Build your professional resume in minutes
         </p>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Mobile tab toggle */}
           <div className="flex md:hidden rounded-lg border border-zinc-800 bg-zinc-900 p-0.5 gap-0.5">
             <button
+              type="button"
               onClick={() => onToggleMobileTab?.("sections")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-medium transition-all cursor-pointer ${
                 activeTab === "sections"
-                  ? "bg-indigo-500 text-white"
+                  ? "bg-indigo-500 text-white shadow-sm shadow-indigo-500/30"
                   : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
               <Menu className="h-3 w-3" />
-              Sections
+              <span className="sm:hidden">Edit</span>
+              <span className="hidden sm:inline">Sections</span>
             </button>
             <button
+              type="button"
               onClick={() => onToggleMobileTab?.("preview")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-medium transition-all cursor-pointer ${
                 activeTab === "preview"
-                  ? "bg-indigo-500 text-white"
+                  ? "bg-indigo-500 text-white shadow-sm shadow-indigo-500/30"
                   : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
               <Eye className="h-3 w-3" />
-              Preview
+              <span>Preview</span>
             </button>
           </div>
 
@@ -115,38 +118,37 @@ export default function BuilderHeader({
                 type="button"
                 onClick={onUndo}
                 disabled={!canUndo}
-                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer"
+                className="p-1 sm:p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer"
                 title="Undo (Ctrl+Z)"
                 aria-label="Undo"
               >
-                <Undo2 className="h-3.5 w-3.5" />
+                <Undo2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
               </button>
               <div className="w-[1px] h-3 bg-zinc-800 mx-0.5" />
               <button
                 type="button"
                 onClick={onRedo}
                 disabled={!canRedo}
-                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer"
+                className="p-1 sm:p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 disabled:cursor-not-allowed cursor-pointer"
                 title="Redo (Ctrl+Y or Ctrl+Shift+Z)"
                 aria-label="Redo"
               >
-                <Redo2 className="h-3.5 w-3.5" />
+                <Redo2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
               </button>
             </div>
           )}
 
           {/* Reset Button */}
           {onReset && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setResetModalOpen(true)}
-              className="flex items-center gap-1.5 border-zinc-800 bg-zinc-900/60 hover:bg-rose-500/10 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 text-xs h-8 px-2.5 sm:px-3 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1 border border-zinc-800 bg-zinc-900/60 hover:bg-rose-500/10 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 text-xs h-7 sm:h-8 w-7 sm:w-auto px-0 sm:px-2.5 rounded-lg transition-all cursor-pointer"
               title="Reset resume to default demo data"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Reset</span>
-            </Button>
+            </button>
           )}
 
           {/* Download PDF */}
@@ -154,18 +156,18 @@ export default function BuilderHeader({
             size="sm"
             onClick={handleDownload}
             disabled={isDownloading || !data}
-            className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs h-8 shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+            className="flex items-center gap-1 sm:gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs h-7 sm:h-8 px-2 sm:px-3 shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed flex-shrink-0 font-medium"
           >
             {isDownloading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Download className="h-3.5 w-3.5" />
             )}
-            <span className="hidden sm:inline">
-              {isDownloading ? "Generating..." : "Download PDF"}
-            </span>
             <span className="sm:hidden">
               {isDownloading ? "..." : "PDF"}
+            </span>
+            <span className="hidden sm:inline">
+              {isDownloading ? "Generating..." : "Download PDF"}
             </span>
           </Button>
         </div>
