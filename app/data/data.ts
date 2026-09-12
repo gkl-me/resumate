@@ -15,6 +15,7 @@ export interface Profile {
 }
 
 export interface Experience {
+    id?: string,
     company: string,
     role: string,
 
@@ -27,11 +28,13 @@ export interface Experience {
 }
 
 export interface Skill {
+    id?: string,
     category: string,
     skills: string[]
 }
 
 export interface Project {
+    id?: string,
     name: string,
 
     highlights: string[]
@@ -45,6 +48,7 @@ export interface Project {
 }
 
 export interface Education {
+    id?: string,
     institute: string,
     degree: string,
 
@@ -356,3 +360,13 @@ export const ResumeData: ResumeDataType = {
         }
     ]
 };
+
+export function ensureItemsWithId<T extends { id?: string }>(items: T[], prefix: string): (T & { id: string })[] {
+    return items.map((item, index) => {
+        if (item.id) return item as T & { id: string };
+        return {
+            ...item,
+            id: `${prefix}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+        };
+    });
+}

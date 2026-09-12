@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,18 +21,107 @@ import {
   X,
   Link,
   Github,
-  Calendar,
   Layers,
   Sparkles,
+  Trash2,
+  GripVertical,
 } from "lucide-react";
 import type { Project } from "@/app/data/data";
-
-import { Trash2 } from "lucide-react";
+import { ensureItemsWithId } from "@/app/data/data";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
 
 interface ProjectsSectionProps {
   data: Project[];
   onUpdate?: (data: Project[]) => void;
+}
+
+interface HighlightItem {
+  id: string;
+  text: string;
+}
+
+function SortableHighlightItem({
+  item,
+  onChange,
+  onRemove,
+  canRemove,
+}: {
+  item: HighlightItem;
+  onChange: (id: string, value: string) => void;
+  onRemove: (id: string) => void;
+  canRemove: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition: isDragging ? "none" : transition,
+    zIndex: isDragging ? 50 : "auto",
+    opacity: isDragging ? 0.75 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-start gap-2 group/bullet ${isDragging ? "transition-none shadow-lg" : ""}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        style={{ touchAction: "none" }}
+        className="mt-2.5 p-0.5 rounded cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 touch-none flex-shrink-0 transition-colors"
+        title="Drag to reorder highlight"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
+      <span className="mt-3.5 h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+      <Textarea
+        value={item.text}
+        onChange={(e) => onChange(item.id, e.target.value)}
+        placeholder="Describe a key feature or achievement..."
+        rows={2}
+        className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70 resize-none text-xs sm:text-sm flex-1 leading-relaxed"
+      />
+      {canRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(item.id)}
+          className="mt-2.5 p-1 rounded-md hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer"
+          title="Remove bullet"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 function ProjectsModal({
@@ -62,25 +151,69 @@ function ProjectsModal({
   const [form, setForm] = useState<Project>(project ?? defaultForm);
   const [techInput, setTechInput] = useState("");
 
+  const [highlights, setHighlights] = useState<HighlightItem[]>(() => {
+    const raw = project?.highlights && project.highlights.length > 0 ? project.highlights : [""];
+    return raw.map((text, idx) => ({
+      id: `highlight-${Date.now().toString(36)}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+      text,
+    }));
+  });
+
+  const highlightSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 3 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  );
+
   const handleChange = (field: keyof Project, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleHighlightChange = (index: number, value: string) => {
-    const updated = [...form.highlights];
-    updated[index] = value;
-    setForm((prev) => ({ ...prev, highlights: updated }));
+  const handleHighlightChange = (id: string, value: string) => {
+    setHighlights((prev) => {
+      const next = prev.map((h) => (h.id === id ? { ...h, text: value } : h));
+      setForm((f) => ({ ...f, highlights: next.map((h) => h.text) }));
+      return next;
+    });
   };
 
   const addHighlight = () => {
-    setForm((prev) => ({ ...prev, highlights: [...prev.highlights, ""] }));
+    const newHighlight: HighlightItem = {
+      id: `highlight-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      text: "",
+    };
+    setHighlights((prev) => {
+      const next = [...prev, newHighlight];
+      setForm((f) => ({ ...f, highlights: next.map((h) => h.text) }));
+      return next;
+    });
   };
 
-  const removeHighlight = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      highlights: prev.highlights.filter((_, i) => i !== index),
-    }));
+  const removeHighlight = (id: string) => {
+    setHighlights((prev) => {
+      const next = prev.filter((h) => h.id !== id);
+      setForm((f) => ({ ...f, highlights: next.map((h) => h.text) }));
+      return next;
+    });
+  };
+
+  const handleHighlightDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setHighlights((prev) => {
+      const oldIndex = prev.findIndex((h) => h.id === active.id);
+      const newIndex = prev.findIndex((h) => h.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      setForm((f) => ({ ...f, highlights: next.map((h) => h.text) }));
+      return next;
+    });
   };
 
   const addTech = () => {
@@ -110,7 +243,7 @@ function ProjectsModal({
               <DialogTitle className="text-base sm:text-lg font-semibold text-zinc-100">
                 {mode === "add" ? "Add Project" : "Edit Project"}
               </DialogTitle>
-              <p className="text-[11px] sm:text-xs text-zinc-500 mt-0.5">Project details & links</p>
+              <p className="text-[11px] sm:text-xs text-zinc-500 mt-0.5">Project information</p>
             </div>
           </div>
         </DialogHeader>
@@ -118,7 +251,7 @@ function ProjectsModal({
         <Separator className="bg-zinc-800/80 mt-3 sm:mt-4" />
 
         <div className="px-4 py-3.5 sm:px-6 sm:py-5 space-y-3.5 sm:space-y-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
-          {/* Name + Year */}
+          {/* Project Name + Year */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="sm:col-span-2 space-y-1 sm:space-y-1.5">
               <Label className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wide">
@@ -127,25 +260,25 @@ function ProjectsModal({
               <Input
                 value={form.name}
                 onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="TaskFlow - Project Management SaaS"
+                placeholder="CloudPulse Analytics"
                 className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70 h-9 sm:h-10 text-xs sm:text-sm"
               />
             </div>
             <div className="space-y-1 sm:space-y-1.5">
-              <Label className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
-                <Calendar className="h-3 w-3 text-zinc-500" /> Year
+              <Label className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wide">
+                Year / Period
               </Label>
               <Input
                 value={form.year ?? ""}
                 onChange={(e) => handleChange("year", e.target.value)}
-                placeholder="2025"
+                placeholder="2024"
                 className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70 h-9 sm:h-10 text-xs sm:text-sm"
               />
             </div>
           </div>
 
           {/* Tech Stack */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
               <Layers className="h-3 w-3 text-zinc-500" /> Tech Stack
             </Label>
@@ -156,7 +289,7 @@ function ProjectsModal({
                   className="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[11px] sm:text-xs font-medium"
                 >
                   {t}
-                  <button onClick={() => removeTech(t)} className="hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => removeTech(t)} className="hover:text-red-400 transition-colors">
                     <X className="h-3 w-3" />
                   </button>
                 </span>
@@ -173,47 +306,51 @@ function ProjectsModal({
                 placeholder="Next.js, TypeScript..."
                 className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70 h-9 text-xs sm:text-sm flex-1"
               />
-              <Button onClick={addTech} size="sm" variant="outline" className="border-zinc-700/80 bg-zinc-800/50 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-zinc-300 hover:text-emerald-300 h-9 px-3">
+              <Button type="button" onClick={addTech} size="sm" variant="outline" className="border-zinc-700/80 bg-zinc-800/50 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-zinc-300 hover:text-emerald-300 h-9 px-3">
                 <Plus className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
 
-          {/* Highlights */}
+          {/* Highlights with Drag & Drop */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wide flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-zinc-500" /> Highlights
+                <Sparkles className="h-3 w-3 text-zinc-500" /> Highlights (drag to rearrange)
               </Label>
               <button
+                type="button"
                 onClick={addHighlight}
                 className="flex items-center gap-1 text-[11px] sm:text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer"
               >
                 <Plus className="h-3 w-3" /> Add bullet
               </button>
             </div>
-            <div className="space-y-2">
-              {form.highlights.map((h, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="mt-2.5 h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                  <Textarea
-                    value={h}
-                    onChange={(e) => handleHighlightChange(i, e.target.value)}
-                    placeholder="Describe a key feature or achievement..."
-                    rows={2}
-                    className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70 resize-none text-xs sm:text-sm flex-1 leading-relaxed"
-                  />
-                  {form.highlights.length > 1 && (
-                    <button
-                      onClick={() => removeHighlight(i)}
-                      className="mt-2 p-1 rounded-md hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+
+            <DndContext
+              id="dnd-project-highlights"
+              sensors={highlightSensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+              onDragEnd={handleHighlightDragEnd}
+            >
+              <SortableContext
+                items={highlights.map((h) => h.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2 p-0.5 relative">
+                  {highlights.map((h) => (
+                    <SortableHighlightItem
+                      key={h.id}
+                      item={h}
+                      onChange={handleHighlightChange}
+                      onRemove={removeHighlight}
+                      canRemove={highlights.length > 1}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
 
           {/* Links */}
@@ -262,7 +399,11 @@ function ProjectsModal({
             <div />
           )}
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={onClose} className="border-zinc-700/80 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="border-zinc-700/80 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
+            >
               Cancel
             </Button>
             <Button
@@ -281,89 +422,181 @@ function ProjectsModal({
   );
 }
 
+function SortableProjectCard({
+  project,
+  onEdit,
+  onDelete,
+}: {
+  project: Project & { id: string };
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition: isDragging ? "none" : transition,
+    zIndex: isDragging ? 50 : "auto",
+    opacity: isDragging ? 0.85 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative flex items-start justify-between p-3.5 sm:p-4 rounded-xl border cursor-pointer ${
+        isDragging
+          ? "transition-none border-emerald-500/70 bg-zinc-900/95 shadow-2xl shadow-emerald-500/10"
+          : "transition-all duration-150 border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-emerald-500/30"
+      }`}
+      onClick={onEdit}
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        style={{ touchAction: "none" }}
+        className="p-1 -ml-1.5 mr-1.5 rounded cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 touch-none flex-shrink-0 transition-colors self-center sm:self-start mt-0.5"
+        title="Drag to reorder"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/25 group-hover:bg-emerald-500/20 transition-colors flex-shrink-0 mt-0.5">
+          <FolderGit2 className="h-4 w-4 text-emerald-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-zinc-100 truncate">{project.name}</p>
+            {project.year && (
+              <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4 flex-shrink-0">
+                {project.year}
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {project.techStack.slice(0, 5).map((t) => (
+              <Badge key={t} variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300 bg-emerald-500/10 py-0 px-1.5 h-4">
+                {t}
+              </Badge>
+            ))}
+            {project.techStack.length > 5 && (
+              <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4">
+                +{project.techStack.length - 5}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions: visible on mobile, reveal on hover for desktop */}
+      <div className="flex items-center gap-1 sm:gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 hover:text-emerald-300 transition-colors cursor-pointer active:scale-95"
+          title="Edit project"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors cursor-pointer active:scale-95"
+          title="Delete project"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectsSection({ data, onUpdate }: ProjectsSectionProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+
+  const itemsWithId = useMemo(() => ensureItemsWithId(data, "proj"), [data]);
+
+  const cardSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 3 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  );
 
   const handleAdd = (item: Project) => {
     onUpdate?.([...data, item]);
   };
 
   const handleEdit = (item: Project, index: number) => {
-    const updated = [...data];
-    updated[index] = item;
+    const updated = [...itemsWithId];
+    updated[index] = { ...item, id: itemsWithId[index].id };
     onUpdate?.(updated);
   };
 
   const handleDelete = (index: number) => {
-    onUpdate?.(data.filter((_, i) => i !== index));
+    onUpdate?.(itemsWithId.filter((_, i) => i !== index));
+  };
+
+  const handleCardDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = itemsWithId.findIndex((item) => item.id === active.id);
+    const newIndex = itemsWithId.findIndex((item) => item.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const reordered = arrayMove(itemsWithId, oldIndex, newIndex);
+      onUpdate?.(reordered);
+    }
   };
 
   return (
     <>
       <div className="space-y-2">
-        {data.map((project, i) => (
-          <div
-            key={i}
-            className="group relative flex items-start justify-between p-3.5 sm:p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-emerald-500/30 cursor-pointer transition-all duration-200"
-            onClick={() => setEditIndex(i)}
+        <DndContext
+          id="dnd-project-cards"
+          sensors={cardSensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+          onDragEnd={handleCardDragEnd}
+        >
+          <SortableContext
+            items={itemsWithId.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/25 group-hover:bg-emerald-500/20 transition-colors flex-shrink-0 mt-0.5">
-                <FolderGit2 className="h-4 w-4 text-emerald-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-zinc-100 truncate">{project.name}</p>
-                  {project.year && (
-                    <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4 flex-shrink-0">
-                      {project.year}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {project.techStack.slice(0, 5).map((t) => (
-                    <Badge key={t} variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300 bg-emerald-500/10 py-0 px-1.5 h-4">
-                      {t}
-                    </Badge>
-                  ))}
-                  {project.techStack.length > 5 && (
-                    <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4">
-                      +{project.techStack.length - 5}
-                    </Badge>
-                  )}
-                </div>
-              </div>
+            <div className="space-y-2 p-0.5 relative">
+              {itemsWithId.map((project, i) => (
+                <SortableProjectCard
+                  key={project.id}
+                  project={project}
+                  onEdit={() => setEditIndex(i)}
+                  onDelete={() => setDeleteIndex(i)}
+                />
+              ))}
             </div>
-
-            {/* Actions: visible on mobile, reveal on hover for desktop */}
-            <div className="flex items-center gap-1 sm:gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditIndex(i);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 hover:text-emerald-300 transition-colors cursor-pointer active:scale-95"
-                title="Edit project"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteIndex(i);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors cursor-pointer active:scale-95"
-                title="Delete project"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        ))}
+          </SortableContext>
+        </DndContext>
 
         <button
           onClick={() => setAddOpen(true)}
@@ -379,6 +612,7 @@ export default function ProjectsSection({ data, onUpdate }: ProjectsSectionProps
       {/* Add Modal */}
       {addOpen && (
         <ProjectsModal
+          key="modal-add-project"
           open={addOpen}
           onClose={() => setAddOpen(false)}
           mode="add"
@@ -389,9 +623,10 @@ export default function ProjectsSection({ data, onUpdate }: ProjectsSectionProps
       {/* Edit Modal */}
       {editIndex !== null && (
         <ProjectsModal
+          key={`modal-edit-project-${itemsWithId[editIndex]?.id ?? editIndex}`}
           open={true}
           onClose={() => setEditIndex(null)}
-          project={data[editIndex]}
+          project={itemsWithId[editIndex]}
           mode="edit"
           onSave={(item) => handleEdit(item, editIndex)}
           onDelete={() => handleDelete(editIndex)}
@@ -404,7 +639,7 @@ export default function ProjectsSection({ data, onUpdate }: ProjectsSectionProps
           open={deleteIndex !== null}
           onClose={() => setDeleteIndex(null)}
           title="Delete Project"
-          itemName={data[deleteIndex]?.name}
+          itemName={itemsWithId[deleteIndex]?.name}
           onConfirm={() => {
             if (deleteIndex !== null) {
               handleDelete(deleteIndex);

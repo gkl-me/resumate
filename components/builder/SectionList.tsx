@@ -11,7 +11,7 @@ import ProjectsSection from "./ProjectsSection";
 import EducationSection from "./EducationSection";
 import type { ResumeDataType, Profile, Experience, Skill, Project, Education } from "@/app/data/data";
 import { CSS } from "@dnd-kit/utilities";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import {
   DndContext,
   closestCenter,
@@ -141,15 +141,10 @@ function SortableSectionAccordion({
 
   // Lock horizontal movement so dragged sections cannot be dragged sideways or off-screen
   const style = {
-    transform: transform
-      ? CSS.Transform.toString({
-          ...transform,
-          x: 0,
-        })
-      : undefined,
-    transition,
+    transform: CSS.Translate.toString(transform),
+    transition: isDragging ? "none" : transition,
     zIndex: isDragging ? 50 : "auto",
-    opacity: isDragging ? 0.7 : 1,
+    opacity: isDragging ? 0.85 : 1,
   };
 
   return (
@@ -229,11 +224,11 @@ function SectionAccordion({
 
   return (
     <div
-      className={`rounded-xl border transition-all duration-200 overflow-hidden ${isDragging
-        ? "border-indigo-500/60 bg-zinc-900/90 shadow-2xl scale-[1.02]"
+      className={`rounded-xl border overflow-hidden ${isDragging
+        ? "transition-none border-indigo-500/60 bg-zinc-900/95 shadow-2xl shadow-indigo-500/10"
         : expanded
-          ? `border-zinc-700/60 bg-zinc-900/60`
-          : "border-zinc-800/40 bg-zinc-900/20 hover:border-zinc-700/60"
+          ? "transition-all duration-150 border-zinc-700/60 bg-zinc-900/60"
+          : "transition-all duration-150 border-zinc-800/40 bg-zinc-900/20 hover:border-zinc-700/60"
         }`}
     >
       {/* Accordion Header */}
@@ -403,7 +398,7 @@ export default function SectionList({
             id="dnd-section-list"
             sensors={sensors}
             collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis]}
+            modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
