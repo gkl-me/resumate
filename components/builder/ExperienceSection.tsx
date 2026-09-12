@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,16 +21,106 @@ import {
   Trash2,
   CalendarRange,
   MapPin,
-  ChevronRight,
   X,
   Building2,
+  GripVertical,
 } from "lucide-react";
 import type { Experience } from "@/app/data/data";
+import { ensureItemsWithId } from "@/app/data/data";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
 
 interface ExperienceSectionProps {
   data: Experience[];
   onUpdate?: (data: Experience[]) => void;
+}
+
+interface BulletItem {
+  id: string;
+  text: string;
+}
+
+function SortableBulletItem({
+  item,
+  onChange,
+  onRemove,
+  canRemove,
+}: {
+  item: BulletItem;
+  onChange: (id: string, value: string) => void;
+  onRemove: (id: string) => void;
+  canRemove: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition: isDragging ? "none" : transition,
+    zIndex: isDragging ? 50 : "auto",
+    opacity: isDragging ? 0.75 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-start gap-2 group/bullet ${isDragging ? "transition-none shadow-lg" : ""}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        style={{ touchAction: "none" }}
+        className="mt-2.5 p-0.5 rounded cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 touch-none flex-shrink-0 transition-colors"
+        title="Drag to reorder bullet"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
+      <span className="mt-3.5 h-1.5 w-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
+      <Textarea
+        value={item.text}
+        onChange={(e) => onChange(item.id, e.target.value)}
+        placeholder="Describe a key responsibility or achievement..."
+        rows={2}
+        className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-cyan-500/30 focus-visible:border-cyan-500/70 resize-none text-xs sm:text-sm flex-1 leading-relaxed"
+      />
+      {canRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(item.id)}
+          className="mt-2.5 p-1 rounded-md hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer"
+          title="Remove bullet"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 function ExperienceModal({
@@ -59,25 +149,69 @@ function ExperienceModal({
 
   const [form, setForm] = useState<Experience>(experience ?? defaultForm);
 
+  const [bullets, setBullets] = useState<BulletItem[]>(() => {
+    const rawBullets = experience?.summary && experience.summary.length > 0 ? experience.summary : [""];
+    return rawBullets.map((text, idx) => ({
+      id: `bullet-${Date.now().toString(36)}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+      text,
+    }));
+  });
+
+  const bulletSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 3 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  );
+
   const handleChange = (field: keyof Experience, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleBulletChange = (index: number, value: string) => {
-    const updated = [...form.summary];
-    updated[index] = value;
-    setForm((prev) => ({ ...prev, summary: updated }));
+  const handleBulletChange = (id: string, value: string) => {
+    setBullets((prev) => {
+      const next = prev.map((b) => (b.id === id ? { ...b, text: value } : b));
+      setForm((f) => ({ ...f, summary: next.map((b) => b.text) }));
+      return next;
+    });
   };
 
   const addBullet = () => {
-    setForm((prev) => ({ ...prev, summary: [...prev.summary, ""] }));
+    const newBullet: BulletItem = {
+      id: `bullet-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      text: "",
+    };
+    setBullets((prev) => {
+      const next = [...prev, newBullet];
+      setForm((f) => ({ ...f, summary: next.map((b) => b.text) }));
+      return next;
+    });
   };
 
-  const removeBullet = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      summary: prev.summary.filter((_, i) => i !== index),
-    }));
+  const removeBullet = (id: string) => {
+    setBullets((prev) => {
+      const next = prev.filter((b) => b.id !== id);
+      setForm((f) => ({ ...f, summary: next.map((b) => b.text) }));
+      return next;
+    });
+  };
+
+  const handleBulletDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setBullets((prev) => {
+      const oldIndex = prev.findIndex((b) => b.id === active.id);
+      const newIndex = prev.findIndex((b) => b.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      setForm((f) => ({ ...f, summary: next.map((b) => b.text) }));
+      return next;
+    });
   };
 
   return (
@@ -163,41 +297,45 @@ function ExperienceModal({
             </div>
           </div>
 
-          {/* Summary / Bullets */}
+          {/* Summary / Bullets with Drag & Drop */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wide">
-                Key Responsibilities
+                Key Responsibilities (drag to rearrange)
               </Label>
               <button
+                type="button"
                 onClick={addBullet}
                 className="flex items-center gap-1 text-[11px] sm:text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors cursor-pointer"
               >
                 <Plus className="h-3 w-3" /> Add bullet
               </button>
             </div>
-            <div className="space-y-2">
-              {form.summary.map((bullet, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="mt-2.5 h-1.5 w-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
-                  <Textarea
-                    value={bullet}
-                    onChange={(e) => handleBulletChange(i, e.target.value)}
-                    placeholder="Describe a key responsibility or achievement..."
-                    rows={2}
-                    className="bg-zinc-800/60 border-zinc-700/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-cyan-500/30 focus-visible:border-cyan-500/70 resize-none text-xs sm:text-sm flex-1 leading-relaxed"
-                  />
-                  {form.summary.length > 1 && (
-                    <button
-                      onClick={() => removeBullet(i)}
-                      className="mt-2 p-1 rounded-md hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+
+            <DndContext
+              id="dnd-experience-bullets"
+              sensors={bulletSensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+              onDragEnd={handleBulletDragEnd}
+            >
+              <SortableContext
+                items={bullets.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2 p-0.5 relative">
+                  {bullets.map((b) => (
+                    <SortableBulletItem
+                      key={b.id}
+                      item={b}
+                      onChange={handleBulletChange}
+                      onRemove={removeBullet}
+                      canRemove={bullets.length > 1}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         </div>
 
@@ -243,87 +381,179 @@ function ExperienceModal({
   );
 }
 
+function SortableExperienceCard({
+  experience,
+  onEdit,
+  onDelete,
+}: {
+  experience: Experience & { id: string };
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: experience.id });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition: isDragging ? "none" : transition,
+    zIndex: isDragging ? 50 : "auto",
+    opacity: isDragging ? 0.85 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative flex items-start justify-between p-3.5 sm:p-4 rounded-xl border cursor-pointer ${
+        isDragging
+          ? "transition-none border-cyan-500/70 bg-zinc-900/95 shadow-2xl shadow-cyan-500/10"
+          : "transition-all duration-150 border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-cyan-500/30"
+      }`}
+      onClick={onEdit}
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        style={{ touchAction: "none" }}
+        className="p-1 -ml-1.5 mr-1.5 rounded cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-300 touch-none flex-shrink-0 transition-colors self-center sm:self-start mt-0.5"
+        title="Drag to reorder"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/15 border border-cyan-500/25 group-hover:bg-cyan-500/20 transition-colors flex-shrink-0 mt-0.5">
+          <Briefcase className="h-4 w-4 text-cyan-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-zinc-100 leading-tight truncate">{experience.role}</p>
+          <p className="text-xs text-zinc-400 mt-0.5 truncate">{experience.company}</p>
+          <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 flex-wrap">
+            <Badge
+              variant="outline"
+              className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4"
+            >
+              {experience.startDate} – {experience.endDate ?? "Present"}
+            </Badge>
+            {experience.place && (
+              <Badge
+                variant="outline"
+                className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4"
+              >
+                {experience.place}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions: visible on mobile, reveal on hover for desktop */}
+      <div className="flex items-center gap-1 sm:gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 hover:text-cyan-300 transition-colors cursor-pointer active:scale-95"
+          title="Edit experience"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors cursor-pointer active:scale-95"
+          title="Delete experience"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ExperienceSection({ data, onUpdate }: ExperienceSectionProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+
+  const itemsWithId = useMemo(() => ensureItemsWithId(data, "exp"), [data]);
+
+  const cardSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 3 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  );
 
   const handleAdd = (item: Experience) => {
     onUpdate?.([...data, item]);
   };
 
   const handleEdit = (item: Experience, index: number) => {
-    const updated = [...data];
-    updated[index] = item;
+    const updated = [...itemsWithId];
+    updated[index] = { ...item, id: itemsWithId[index].id };
     onUpdate?.(updated);
   };
 
   const handleDelete = (index: number) => {
-    onUpdate?.(data.filter((_, i) => i !== index));
+    onUpdate?.(itemsWithId.filter((_, i) => i !== index));
+  };
+
+  const handleCardDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = itemsWithId.findIndex((item) => item.id === active.id);
+    const newIndex = itemsWithId.findIndex((item) => item.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const reordered = arrayMove(itemsWithId, oldIndex, newIndex);
+      onUpdate?.(reordered);
+    }
   };
 
   return (
     <>
       <div className="space-y-2">
-        {data.map((exp, i) => (
-          <div
-            key={i}
-            className="group relative flex items-start justify-between p-3.5 sm:p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-cyan-500/30 cursor-pointer transition-all duration-200"
-            onClick={() => setEditIndex(i)}
+        <DndContext
+          id="dnd-experience-cards"
+          sensors={cardSensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+          onDragEnd={handleCardDragEnd}
+        >
+          <SortableContext
+            items={itemsWithId.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/15 border border-cyan-500/25 group-hover:bg-cyan-500/20 transition-colors flex-shrink-0 mt-0.5">
-                <Briefcase className="h-4 w-4 text-cyan-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-zinc-100 leading-tight truncate">{exp.role}</p>
-                <p className="text-xs text-zinc-400 mt-0.5 truncate">{exp.company}</p>
-                <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 flex-wrap">
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4"
-                  >
-                    {exp.startDate} – {exp.endDate ?? "Present"}
-                  </Badge>
-                  {exp.place && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4"
-                    >
-                      {exp.place}
-                    </Badge>
-                  )}
-                </div>
-              </div>
+            <div className="space-y-2 p-0.5 relative">
+              {itemsWithId.map((exp, i) => (
+                <SortableExperienceCard
+                  key={exp.id}
+                  experience={exp}
+                  onEdit={() => setEditIndex(i)}
+                  onDelete={() => setDeleteIndex(i)}
+                />
+              ))}
             </div>
-
-            {/* Actions: visible on mobile, reveal on hover for desktop */}
-            <div className="flex items-center gap-1 sm:gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditIndex(i);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 hover:text-cyan-300 transition-colors cursor-pointer active:scale-95"
-                title="Edit experience"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteIndex(i);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors cursor-pointer active:scale-95"
-                title="Delete experience"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        ))}
+          </SortableContext>
+        </DndContext>
 
         {/* Add Button */}
         <button
@@ -340,6 +570,7 @@ export default function ExperienceSection({ data, onUpdate }: ExperienceSectionP
       {/* Add Modal */}
       {addOpen && (
         <ExperienceModal
+          key="modal-add-experience"
           open={addOpen}
           onClose={() => setAddOpen(false)}
           mode="add"
@@ -350,9 +581,10 @@ export default function ExperienceSection({ data, onUpdate }: ExperienceSectionP
       {/* Edit Modal */}
       {editIndex !== null && (
         <ExperienceModal
+          key={`modal-edit-experience-${itemsWithId[editIndex]?.id ?? editIndex}`}
           open={true}
           onClose={() => setEditIndex(null)}
-          experience={data[editIndex]}
+          experience={itemsWithId[editIndex]}
           mode="edit"
           onSave={(item) => handleEdit(item, editIndex)}
           onDelete={() => handleDelete(editIndex)}
@@ -365,7 +597,7 @@ export default function ExperienceSection({ data, onUpdate }: ExperienceSectionP
           open={deleteIndex !== null}
           onClose={() => setDeleteIndex(null)}
           title="Delete Experience"
-          itemName={data[deleteIndex]?.role || data[deleteIndex]?.company}
+          itemName={itemsWithId[deleteIndex]?.role || itemsWithId[deleteIndex]?.company}
           onConfirm={() => {
             if (deleteIndex !== null) {
               handleDelete(deleteIndex);
