@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { ResumeDataType } from "@/app/data/data";
 import ResetConfirmModal from "./ResetConfirmModal";
+import DownloadModal from "./DownloadModal";
 
 interface BuilderHeaderProps {
   onToggleMobileTab?: (tab: "sections" | "preview") => void;
@@ -30,37 +31,8 @@ export default function BuilderHeader({
   onUndo,
   onRedo,
 }: BuilderHeaderProps) {
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
-
-  const handleDownload = async () => {
-    if (!data || isDownloading) return;
-    setIsDownloading(true);
-    try {
-      const { pdf } = await import("@react-pdf/renderer");
-      const { ResumePdfDocumnet } = await import(
-        "@/components/pdf/ResumePdfDocument"
-      );
-      const blob = await pdf(
-        <ResumePdfDocumnet data={data} sectionOrder={sectionOrder} />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      const rawName = data.profile?.name?.trim() || "Resume";
-      const fileName = `${rawName.replace(/\s+/g, "_")}_Resume.pdf`;
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Failed to generate PDF:", err);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md">
@@ -151,27 +123,27 @@ export default function BuilderHeader({
             </button>
           )}
 
-          {/* Download PDF */}
+          {/* Download Resume Button */}
           <Button
             size="sm"
-            onClick={handleDownload}
-            disabled={isDownloading || !data}
+            onClick={() => setDownloadModalOpen(true)}
+            disabled={!data}
             className="flex items-center gap-1 sm:gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs h-7 sm:h-8 px-2 sm:px-3 shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed flex-shrink-0 font-medium"
           >
-            {isDownloading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Download className="h-3.5 w-3.5" />
-            )}
-            <span className="sm:hidden">
-              {isDownloading ? "..." : "PDF"}
-            </span>
-            <span className="hidden sm:inline">
-              {isDownloading ? "Generating..." : "Download PDF"}
-            </span>
+            <Download className="h-3.5 w-3.5" />
+            <span className="sm:hidden">Export</span>
+            <span className="hidden sm:inline">Download</span>
           </Button>
         </div>
       </div>
+
+      {/* Download Choice Modal (PDF or DOCX) */}
+      <DownloadModal
+        open={downloadModalOpen}
+        onClose={() => setDownloadModalOpen(false)}
+        data={data}
+        sectionOrder={sectionOrder}
+      />
 
       {/* Reset Confirmation Modal */}
       {onReset && (
