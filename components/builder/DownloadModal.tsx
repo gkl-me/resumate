@@ -176,16 +176,6 @@ export default function DownloadModal({
           </button>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-zinc-850 flex items-center justify-between text-[11px] text-zinc-500">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={downloadingType !== null}
-            className="text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer py-1 px-2 rounded-md hover:bg-zinc-800 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-        </div>
       </DialogContent>
     </Dialog>
   );
