@@ -26,6 +26,7 @@ import {
   Building2,
 } from "lucide-react";
 import type { Experience } from "@/app/data/data";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 interface ExperienceSectionProps {
   data: Experience[];
@@ -245,6 +246,7 @@ function ExperienceModal({
 export default function ExperienceSection({ data, onUpdate }: ExperienceSectionProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const handleAdd = (item: Experience) => {
     onUpdate?.([...data, item]);
@@ -266,17 +268,17 @@ export default function ExperienceSection({ data, onUpdate }: ExperienceSectionP
         {data.map((exp, i) => (
           <div
             key={i}
-            className="group relative flex items-start justify-between p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-cyan-500/30 cursor-pointer transition-all duration-200"
+            className="group relative flex items-start justify-between p-3.5 sm:p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-cyan-500/30 cursor-pointer transition-all duration-200"
             onClick={() => setEditIndex(i)}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/15 border border-cyan-500/25 group-hover:bg-cyan-500/20 transition-colors flex-shrink-0 mt-0.5">
                 <Briefcase className="h-4 w-4 text-cyan-400" />
               </div>
-              <div>
-                <p className="text-sm font-semibold text-zinc-100 leading-tight">{exp.role}</p>
-                <p className="text-xs text-zinc-400 mt-0.5">{exp.company}</p>
-                <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-100 leading-tight truncate">{exp.role}</p>
+                <p className="text-xs text-zinc-400 mt-0.5 truncate">{exp.company}</p>
+                <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 flex-wrap">
                   <Badge
                     variant="outline"
                     className="text-[10px] border-zinc-700 text-zinc-500 bg-zinc-800/50 py-0 px-1.5 h-4"
@@ -294,10 +296,31 @@ export default function ExperienceSection({ data, onUpdate }: ExperienceSectionP
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 border border-cyan-500/30">
-                <Pencil className="h-3 w-3 text-cyan-400" />
-              </div>
+
+            {/* Actions: visible on mobile, reveal on hover for desktop */}
+            <div className="flex items-center gap-1 sm:gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditIndex(i);
+                }}
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 hover:text-cyan-300 transition-colors cursor-pointer active:scale-95"
+                title="Edit experience"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteIndex(i);
+                }}
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors cursor-pointer active:scale-95"
+                title="Delete experience"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
         ))}
@@ -333,6 +356,22 @@ export default function ExperienceSection({ data, onUpdate }: ExperienceSectionP
           mode="edit"
           onSave={(item) => handleEdit(item, editIndex)}
           onDelete={() => handleDelete(editIndex)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteIndex !== null && (
+        <DeleteConfirmModal
+          open={deleteIndex !== null}
+          onClose={() => setDeleteIndex(null)}
+          title="Delete Experience"
+          itemName={data[deleteIndex]?.role || data[deleteIndex]?.company}
+          onConfirm={() => {
+            if (deleteIndex !== null) {
+              handleDelete(deleteIndex);
+              setDeleteIndex(null);
+            }
+          }}
         />
       )}
     </>

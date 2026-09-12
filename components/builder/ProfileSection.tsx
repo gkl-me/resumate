@@ -218,22 +218,30 @@ export default function ProfileSection({ data, onUpdate }: ProfileSectionProps) 
     <>
       <div
         onClick={() => setOpen(true)}
-        className="group relative flex items-center justify-between p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-indigo-500/30 cursor-pointer transition-all duration-200"
+        className="group relative flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-indigo-500/30 cursor-pointer transition-all duration-200"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/15 border border-indigo-500/25 group-hover:bg-indigo-500/20 transition-colors">
+        <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/15 border border-indigo-500/25 group-hover:bg-indigo-500/20 transition-colors flex-shrink-0">
             <User className="h-4 w-4 text-indigo-400" />
           </div>
-          <div>
-            <p className="text-sm font-semibold text-zinc-100">{data.name}</p>
-            <p className="text-xs text-zinc-500">{data.email}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-zinc-100 truncate">{data.name}</p>
+            <p className="text-xs text-zinc-500 truncate">{data.email}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
-            <Pencil className="h-3 w-3 text-indigo-400" />
-          </div>
-          <ChevronRight className="h-4 w-4 text-zinc-500" />
+        <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(true);
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 transition-colors cursor-pointer active:scale-95"
+            title="Edit profile"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <ChevronRight className="h-4 w-4 text-zinc-500 hidden sm:block" />
         </div>
       </div>
 
