@@ -177,10 +177,6 @@ export default function DownloadModal({
         </div>
 
         <div className="mt-4 pt-3 border-t border-zinc-850 flex items-center justify-between text-[11px] text-zinc-500">
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Pure client-side export
-          </span>
           <button
             type="button"
             onClick={onClose}
